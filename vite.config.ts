@@ -12,7 +12,13 @@ export default defineConfig({
       },
       output: {
         entryFileNames: "[name].js",
-        dir: "dist"
+        dir: "dist",
+        assetFileNames: (assetInfo) => {
+          if (assetInfo.name === "style.css") {
+            return "assets/content.css";
+          }
+          return "assets/[name][extname]";
+        }
       }
     },
     outDir: "dist",
