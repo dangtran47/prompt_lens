@@ -2,24 +2,41 @@ import React from "react";
 import ReactDOM from "react-dom";
 import { Button } from "./components/ui/button";
 import { TranslateIcon } from "./components/icons/translate-icon";
+import { SummarizeIcon } from "./components/icons/summarize-icon";
 import "./styles/globals.css";
 
 const TranslationIcon: React.FC = () => {
   return (
-    <Button
-      variant="outline"
-      size="icon"
-      className="fixed z-50 bg-white shadow-lg hover:bg-gray-100"
-      onClick={() => {
-        const selectedText = window.getSelection()?.toString();
-        if (selectedText) {
-          // TODO: Implement translation logic
-          console.log("Selected text:", selectedText);
-        }
-      }}
-    >
-      <TranslateIcon />
-    </Button>
+    <div className="flex gap-2 absolute z-50 bg-white shadow-lg rounded-md">
+      <Button
+        variant="outline"
+        size="icon"
+        className="hover:bg-gray-100"
+        onClick={() => {
+          const selectedText = window.getSelection()?.toString();
+          if (selectedText) {
+            // TODO: Implement translation logic
+            console.log("Selected text:", selectedText);
+          }
+        }}
+      >
+        <TranslateIcon />
+      </Button>
+      <Button
+        variant="outline"
+        size="icon"
+        className="hover:bg-gray-100"
+        onClick={() => {
+          const selectedText = window.getSelection()?.toString();
+          if (selectedText) {
+            // TODO: Implement summarization logic
+            console.log("Selected text for summarization:", selectedText);
+          }
+        }}
+      >
+        <SummarizeIcon />
+      </Button>
+    </div>
   );
 };
 
