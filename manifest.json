@@ -1,10 +1,11 @@
 {
   "manifest_version": 3,
-  "name": "Text Translator",
+  "name": "Prompt Lens",
   "version": "1.0.0",
-  "description": "Translate selected text on any webpage",
-  "permissions": ["activeTab", "scripting"],
+  "description": "A Chrome extension that enhances your browsing experience by providing AI-generated insights and summaries.",
+  "permissions": ["activeTab", "scripting", "storage"],
   "action": {
+    "default_popup": "popup.html",
     "default_icon": {
       "16": "icons/icon16.png",
       "48": "icons/icon48.png",

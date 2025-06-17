@@ -1,4 +1,4 @@
-# Text Translator & AI Assistant Chrome Extension
+# Prompt Lens - AI Assistant Chrome Extension
 
 A Chromium-based browser extension that shows an AI assistant icon when text is selected on any webpage, enabling translation and custom LLM interactions.
 

@@ -8,13 +8,14 @@ export default defineConfig({
     rollupOptions: {
       input: {
         content: resolve(__dirname, "src/content.tsx"),
-        background: resolve(__dirname, "src/background.ts")
+        background: resolve(__dirname, "src/background.ts"),
+        popup: resolve(__dirname, "src/popup.tsx")
       },
       output: {
         entryFileNames: "[name].js",
         dir: "dist",
         assetFileNames: (assetInfo) => {
-          if (assetInfo.name === "style.css") {
+          if (assetInfo.name?.includes("globals.css") || assetInfo.name === "style.css") {
             return "assets/content.css";
           }
           return "assets/[name][extname]";

@@ -6,7 +6,7 @@ const filesToCopy = [
   ["icons/icon16.png", "dist/icons/icon16.png"],
   ["icons/icon48.png", "dist/icons/icon48.png"],
   ["icons/icon128.png", "dist/icons/icon128.png"],
-  ["dist/assets/content.css", "dist/assets/content.css"]
+  ["popup.html", "dist/popup.html"]
 ];
 
 // Create dist directory if it doesn't exist

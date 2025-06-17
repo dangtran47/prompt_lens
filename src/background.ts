@@ -1,3 +1,3 @@
 chrome.runtime.onInstalled.addListener(() => {
-  console.log("Text Translator extension installed");
+  console.log("Prompt Lens extension installed");
 });
