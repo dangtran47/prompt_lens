@@ -16,7 +16,7 @@ const PopupApp: React.FC = () => {
   const [config, setConfig] = useState<Config>({
     mode: null,
     provider: "",
-    apiKey: "",
+    apiKey: ""
   });
   const [isConfiguring, setIsConfiguring] = useState(false);
 
@@ -35,11 +35,11 @@ const PopupApp: React.FC = () => {
   const saveConfig = (newConfig: Config) => {
     chrome.storage.sync.set(
       {
-        extensionConfig: JSON.stringify(newConfig),
+        extensionConfig: JSON.stringify(newConfig)
       },
       () => {
         console.log("Configuration saved");
-      },
+      }
     );
   };
 
@@ -56,7 +56,7 @@ const PopupApp: React.FC = () => {
   const handleConfigSave = () => {
     const newConfig = {
       ...config,
-      mode: currentMode,
+      mode: currentMode
     };
     setConfig(newConfig);
     saveConfig(newConfig);
@@ -66,7 +66,7 @@ const PopupApp: React.FC = () => {
   const handleConfigChange = (field: keyof Config, value: string) => {
     setConfig((prev) => ({
       ...prev,
-      [field]: value,
+      [field]: value
     }));
   };
 
@@ -74,7 +74,7 @@ const PopupApp: React.FC = () => {
     const resetConfig = {
       mode: null,
       provider: "",
-      apiKey: "",
+      apiKey: ""
     };
     setConfig(resetConfig);
     setCurrentMode(null);

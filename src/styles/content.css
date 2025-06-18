@@ -1,0 +1,97 @@
+.prompt-lens-buttons {
+  position: fixed;
+  z-index: 10000;
+  display: flex;
+  gap: 8px;
+  padding: 8px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  border: 1px solid #e2e8f0;
+}
+
+.prompt-lens-btn {
+  width: 32px;
+  height: 32px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  background: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #4a5568;
+  transition: all 0.2s;
+  padding: 0;
+}
+
+.prompt-lens-btn svg {
+  width: 16px;
+  height: 16px;
+  stroke: currentColor;
+}
+
+.prompt-lens-btn:hover {
+  background: #f7fafc;
+  border-color: #cbd5e0;
+  color: #2d3748;
+}
+
+.prompt-lens-result-popup,
+.prompt-lens-error-popup {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 10001;
+  max-width: 400px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border: 1px solid #e2e8f0;
+  padding: 16px;
+}
+
+.prompt-lens-error-popup {
+  background: #fff5f5;
+  border-color: #feb2b2;
+}
+
+.prompt-lens-result-content,
+.prompt-lens-error-content {
+  position: relative;
+}
+
+.prompt-lens-result-content p,
+.prompt-lens-error-content p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #2d3748;
+}
+
+.prompt-lens-error-content p {
+  color: #c53030;
+}
+
+.prompt-lens-close-btn {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 24px;
+  height: 24px;
+  border-radius: 12px;
+  background: #e2e8f0;
+  border: none;
+  color: #4a5568;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  line-height: 1;
+  transition: all 0.2s;
+}
+
+.prompt-lens-close-btn:hover {
+  background: #cbd5e0;
+}
