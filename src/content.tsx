@@ -6,112 +6,6 @@ interface Config {
   apiKey: string;
 }
 
-// Function to get API endpoint based on provider
-const getApiEndpoint = (provider: string): string => {
-  switch (provider) {
-    case "openai":
-      return "https://api.openai.com/v1/chat/completions";
-    case "openrouter":
-      return "https://openrouter.ai/api/v1/chat/completions";
-    case "anthropic":
-      return "https://api.anthropic.com/v1/messages";
-    case "cohere":
-      return "https://api.cohere.ai/v1/generate";
-    case "huggingface":
-      return "https://api-inference.huggingface.co/models";
-    case "replicate":
-      return "https://api.replicate.com/v1/predictions";
-    case "together":
-      return "https://api.together.xyz/inference";
-    default:
-      return "http://localhost:11434/api/generate"; // Default for custom/local
-  }
-};
-
-// Function to get model based on provider
-const getModel = (provider: string): string => {
-  switch (provider) {
-    case "openai":
-      return "gpt-3.5-turbo";
-    case "openrouter":
-      return "meta-llama/llama-2-7b-chat";
-    case "anthropic":
-      return "claude-3-haiku-20240307";
-    case "cohere":
-      return "command";
-    case "huggingface":
-      return "microsoft/DialoGPT-medium";
-    case "replicate":
-      return "meta/llama-2-7b-chat";
-    case "together":
-      return "togethercomputer/llama-2-7b-chat";
-    default:
-      return "llama3.1"; // Default for custom/local
-  }
-};
-
-// Function to translate text using the configured API
-const translateText = async (text: string, config: Config) => {
-  try {
-    const apiEndpoint = getApiEndpoint(config.provider);
-    const model = getModel(config.provider);
-
-    const response = await fetch(apiEndpoint, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...(config.apiKey && { Authorization: `Bearer ${config.apiKey}` })
-      },
-      body: JSON.stringify({
-        model: model,
-        prompt: `Translate the following text to English: "${text}"`,
-        stream: false
-      })
-    });
-
-    if (!response.ok) {
-      throw new Error("Translation failed");
-    }
-
-    const result = await response.json();
-    showResult(result.response || result.content || result);
-  } catch (error) {
-    console.error("Translation error:", error);
-    showError("Translation failed");
-  }
-};
-
-// Function to summarize text using the configured API
-const summarizeText = async (text: string, config: Config) => {
-  try {
-    const apiEndpoint = getApiEndpoint(config.provider);
-    const model = getModel(config.provider);
-
-    const response = await fetch(apiEndpoint, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...(config.apiKey && { Authorization: `Bearer ${config.apiKey}` })
-      },
-      body: JSON.stringify({
-        model: model,
-        prompt: `Summarize the following text in a few concise sentences: "${text}"`,
-        stream: false
-      })
-    });
-
-    if (!response.ok) {
-      throw new Error("Summarization failed");
-    }
-
-    const result = await response.json();
-    showResult(result.response || result.content || result);
-  } catch (error) {
-    console.error("Summarization error:", error);
-    showError("Summarization failed");
-  }
-};
-
 // Create and show result popup
 const showResult = (text: string) => {
   const popup = document.createElement("div");
@@ -188,7 +82,22 @@ const createFloatingButtons = () => {
         if (result.extensionConfig) {
           const config = JSON.parse(result.extensionConfig);
           if (config.mode === "local" && config.provider) {
-            translateText(selectedText, config);
+            console.log("translateBtn clicked");
+            // Send message to background script
+            chrome.runtime.sendMessage(
+              {
+                action: "translate",
+                text: selectedText,
+                config: config
+              },
+              (response) => {
+                if (response.success) {
+                  showResult(response.data);
+                } else {
+                  showError(response.error || "Translation failed");
+                }
+              }
+            );
           } else {
             showError("Please configure the extension first");
           }
@@ -206,7 +115,21 @@ const createFloatingButtons = () => {
         if (result.extensionConfig) {
           const config = JSON.parse(result.extensionConfig);
           if (config.mode === "local" && config.provider) {
-            summarizeText(selectedText, config);
+            // Send message to background script
+            chrome.runtime.sendMessage(
+              {
+                action: "summarize",
+                text: selectedText,
+                config: config
+              },
+              (response) => {
+                if (response.success) {
+                  showResult(response.data);
+                } else {
+                  showError(response.error || "Summarization failed");
+                }
+              }
+            );
           } else {
             showError("Please configure the extension first");
           }

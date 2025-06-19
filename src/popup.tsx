@@ -64,10 +64,16 @@ const PopupApp: React.FC = () => {
   };
 
   const handleConfigChange = (field: keyof Config, value: string) => {
-    setConfig((prev) => ({
-      ...prev,
+    const newConfig = {
+      ...config,
       [field]: value
-    }));
+    };
+    setConfig(newConfig);
+
+    // Auto-save configuration when any field changes
+    if (currentMode) {
+      saveConfig(newConfig);
+    }
   };
 
   const resetConfig = () => {
