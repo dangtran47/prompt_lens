@@ -18,6 +18,14 @@ const showResult = (text: string) => {
   `;
   document.body.appendChild(popup);
 
+  // Position the result popup to the right of the buttons
+  if (buttonsContainer) {
+    const buttonRect = buttonsContainer.getBoundingClientRect();
+    popup.style.position = "fixed";
+    popup.style.left = `${buttonRect.right + 10}px`;
+    popup.style.top = `${buttonRect.top}px`;
+  }
+
   const closeBtn = popup.querySelector(".prompt-lens-close-btn");
   closeBtn?.addEventListener("click", () => {
     popup.remove();
@@ -40,6 +48,13 @@ const showError = (message: string) => {
   closeBtn?.addEventListener("click", () => {
     popup.remove();
   });
+
+  // Auto-hide after 5 seconds
+  setTimeout(() => {
+    if (popup.parentNode) {
+      popup.remove();
+    }
+  }, 5000);
 };
 
 // Create floating buttons
@@ -82,7 +97,6 @@ const createFloatingButtons = () => {
         if (result.extensionConfig) {
           const config = JSON.parse(result.extensionConfig);
           if (config.mode === "local" && config.provider) {
-            console.log("translateBtn clicked");
             // Send message to background script
             chrome.runtime.sendMessage(
               {
@@ -157,6 +171,12 @@ const positionButtons = (selection: Selection) => {
   buttonsContainer.style.display = "block";
 };
 
+// Remove all result popups
+const removeAllResultPopups = () => {
+  const resultPopups = document.querySelectorAll(".prompt-lens-result-popup");
+  resultPopups.forEach((popup) => popup.remove());
+};
+
 document.addEventListener("mouseup", () => {
   const selection = window.getSelection();
 
@@ -168,6 +188,7 @@ document.addEventListener("mouseup", () => {
   } else if (buttonsContainer) {
     buttonsContainer.remove();
     buttonsContainer = null;
+    removeAllResultPopups();
   }
 });
 
@@ -175,6 +196,7 @@ document.addEventListener("mousedown", (e) => {
   if (buttonsContainer && !buttonsContainer.contains(e.target as Node)) {
     buttonsContainer.remove();
     buttonsContainer = null;
+    removeAllResultPopups();
   }
 });
 
@@ -182,6 +204,7 @@ document.addEventListener("mousedown", (e) => {
 //   if (buttonsContainer) {
 //     buttonsContainer.remove();
 //     buttonsContainer = null;
+//     removeAllResultPopups();
 //   }
 // });
 
@@ -189,5 +212,6 @@ window.addEventListener("resize", () => {
   if (buttonsContainer) {
     buttonsContainer.remove();
     buttonsContainer = null;
+    removeAllResultPopups();
   }
 });
