@@ -20,8 +20,14 @@ const getApiEndpoint = (provider: string): string => {
   }
 };
 
-// Function to get model based on provider
-const getModel = (provider: string): string => {
+// Function to get model based on provider and config
+const getModel = (provider: string, config: any): string => {
+  // If user has selected a specific model, use it
+  if (config.model) {
+    return config.model;
+  }
+
+  // Fallback to default models
   switch (provider) {
     case "openai":
       return "gpt-3.5-turbo";
@@ -93,7 +99,7 @@ const callAnthropicAPI = async (
   sendMessage: (data: any) => void
 ) => {
   const apiEndpoint = getApiEndpoint("anthropic");
-  const model = getModel("anthropic");
+  const model = getModel("anthropic", config);
 
   const prompt = isTranslation
     ? `Translate the following text to Vietnamese: "${text}"`
@@ -137,7 +143,7 @@ const callOpenAIAPI = async (
   sendMessage: (data: any) => void
 ) => {
   const apiEndpoint = getApiEndpoint("openai");
-  const model = getModel("openai");
+  const model = getModel("openai", config);
 
   const prompt = isTranslation
     ? `Translate the following text to English: "${text}"`
@@ -177,7 +183,7 @@ const callOpenRouterAPI = async (
   sendMessage: (data: any) => void
 ) => {
   const apiEndpoint = getApiEndpoint("openrouter");
-  const model = getModel("openrouter");
+  const model = getModel("openrouter", config);
 
   const prompt = isTranslation
     ? `Translate the following text to English: "${text}"`
@@ -217,7 +223,7 @@ const callCohereAPI = async (
   sendMessage: (data: any) => void
 ) => {
   const apiEndpoint = getApiEndpoint("cohere");
-  const model = getModel("cohere");
+  const model = getModel("cohere", config);
 
   const prompt = isTranslation
     ? `Translate the following text to English: "${text}"`
@@ -252,7 +258,7 @@ const callHuggingFaceAPI = async (
   isTranslation: boolean,
   sendMessage: (data: any) => void
 ) => {
-  const apiEndpoint = `${getApiEndpoint("huggingface")}/${getModel("huggingface")}`;
+  const apiEndpoint = `${getApiEndpoint("huggingface")}/${getModel("huggingface", config)}`;
 
   const prompt = isTranslation
     ? `Translate the following text to English: "${text}"`
@@ -289,7 +295,7 @@ const callReplicateAPI = async (
   sendMessage: (data: any) => void
 ) => {
   const apiEndpoint = getApiEndpoint("replicate");
-  const model = getModel("replicate");
+  const model = getModel("replicate", config);
 
   const prompt = isTranslation
     ? `Translate the following text to English: "${text}"`
@@ -326,7 +332,7 @@ const callTogetherAPI = async (
   sendMessage: (data: any) => void
 ) => {
   const apiEndpoint = getApiEndpoint("together");
-  const model = getModel("together");
+  const model = getModel("together", config);
 
   const prompt = isTranslation
     ? `Translate the following text to English: "${text}"`
@@ -362,7 +368,7 @@ const callLocalAPI = async (
   sendMessage: (data: any) => void
 ) => {
   const apiEndpoint = getApiEndpoint("local");
-  const model = getModel("local");
+  const model = getModel("local", config);
 
   const prompt = isTranslation
     ? `Translate the following text to English: "${text}"`
