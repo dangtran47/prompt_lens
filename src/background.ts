@@ -157,7 +157,7 @@ const callOpenAIAPI = async (
   const model = getModel("openai", config);
 
   const prompt = isTranslation
-    ? `Translate the following text to English: "${text}"`
+    ? `Translate the following text to Vietnamese: "${text}"`
     : `Summarize the following text in a few concise sentences: "${text}"`;
 
   const response = await fetch(apiEndpoint, {
@@ -201,7 +201,7 @@ const callOpenRouterAPI = async (
   const model = getModel("openrouter", config);
 
   const prompt = isTranslation
-    ? `Translate the following text to English: "${text}"`
+    ? `Translate the following text to Vietnamese: "${text}"`
     : `Summarize the following text in a few concise sentences: "${text}"`;
 
   const response = await fetch(apiEndpoint, {
@@ -245,7 +245,7 @@ const callCohereAPI = async (
   const model = getModel("cohere", config);
 
   const prompt = isTranslation
-    ? `Translate the following text to English: "${text}"`
+    ? `Translate the following text to Vietnamese: "${text}"`
     : `Summarize the following text in a few concise sentences: "${text}"`;
 
   const response = await fetch(apiEndpoint, {
@@ -284,7 +284,7 @@ const callHuggingFaceAPI = async (
   const apiEndpoint = `${getApiEndpoint("huggingface")}/${getModel("huggingface", config)}`;
 
   const prompt = isTranslation
-    ? `Translate the following text to English: "${text}"`
+    ? `Translate the following text to Vietnamese: "${text}"`
     : `Summarize the following text in a few concise sentences: "${text}"`;
 
   const response = await fetch(apiEndpoint, {
@@ -325,7 +325,7 @@ const callReplicateAPI = async (
   const model = getModel("replicate", config);
 
   const prompt = isTranslation
-    ? `Translate the following text to English: "${text}"`
+    ? `Translate the following text to Vietnamese: "${text}"`
     : `Summarize the following text in a few concise sentences: "${text}"`;
 
   const response = await fetch(apiEndpoint, {
@@ -366,7 +366,7 @@ const callTogetherAPI = async (
   const model = getModel("together", config);
 
   const prompt = isTranslation
-    ? `Translate the following text to English: "${text}"`
+    ? `Translate the following text to Vietnamese: "${text}"`
     : `Summarize the following text in a few concise sentences: "${text}"`;
 
   const response = await fetch(apiEndpoint, {
@@ -406,7 +406,7 @@ const callLocalAPI = async (
   const model = getModel("local", config);
 
   const prompt = isTranslation
-    ? `Translate the following text to English: "${text}"`
+    ? `Translate the following text to Vietnamese: "${text}"`
     : `Summarize the following text in a few concise sentences: "${text}"`;
 
   const response = await fetch(apiEndpoint, {
