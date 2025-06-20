@@ -42,8 +42,52 @@ const getModel = (provider: string): string => {
   }
 };
 
-// Anthropic API call
-const callAnthropicAPI = async (text: string, config: any, isTranslation: boolean) => {
+// Stream response handler
+const handleStreamResponse = async (response: Response, sendMessage: (data: any) => void) => {
+  if (!response.body) {
+    throw new Error("No response body");
+  }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      const chunk = decoder.decode(value, { stream: true });
+      const lines = chunk.split("\n");
+
+      for (const line of lines) {
+        if (line.trim() === "") continue;
+        if (line.startsWith("data: ")) {
+          const data = line.slice(6);
+          if (data === "[DONE]") {
+            sendMessage({ type: "done" });
+            return;
+          }
+          try {
+            const parsed = JSON.parse(data);
+            sendMessage({ type: "chunk", data: parsed });
+          } catch (e) {
+            // Skip invalid JSON
+          }
+        }
+      }
+    }
+  } finally {
+    reader.releaseLock();
+  }
+};
+
+// Anthropic API call with streaming
+const callAnthropicAPI = async (
+  text: string,
+  config: any,
+  isTranslation: boolean,
+  sendMessage: (data: any) => void
+) => {
   const apiEndpoint = getApiEndpoint("anthropic");
   const model = getModel("anthropic");
 
@@ -67,7 +111,8 @@ const callAnthropicAPI = async (text: string, config: any, isTranslation: boolea
           role: "user",
           content: prompt
         }
-      ]
+      ],
+      stream: true
     })
   };
 
@@ -77,12 +122,16 @@ const callAnthropicAPI = async (text: string, config: any, isTranslation: boolea
     throw new Error(`${isTranslation ? "Translation" : "Summarization"} failed`);
   }
 
-  const result = await response.json();
-  return result.content?.[0]?.text || result.content || result;
+  await handleStreamResponse(response, sendMessage);
 };
 
-// OpenAI API call
-const callOpenAIAPI = async (text: string, config: any, isTranslation: boolean) => {
+// OpenAI API call with streaming
+const callOpenAIAPI = async (
+  text: string,
+  config: any,
+  isTranslation: boolean,
+  sendMessage: (data: any) => void
+) => {
   const apiEndpoint = getApiEndpoint("openai");
   const model = getModel("openai");
 
@@ -104,7 +153,8 @@ const callOpenAIAPI = async (text: string, config: any, isTranslation: boolean) 
           content: prompt
         }
       ],
-      max_tokens: 1000
+      max_tokens: 1000,
+      stream: true
     })
   });
 
@@ -112,12 +162,16 @@ const callOpenAIAPI = async (text: string, config: any, isTranslation: boolean) 
     throw new Error(`${isTranslation ? "Translation" : "Summarization"} failed`);
   }
 
-  const result = await response.json();
-  return result.choices?.[0]?.message?.content || result.content || result;
+  await handleStreamResponse(response, sendMessage);
 };
 
-// OpenRouter API call
-const callOpenRouterAPI = async (text: string, config: any, isTranslation: boolean) => {
+// OpenRouter API call with streaming
+const callOpenRouterAPI = async (
+  text: string,
+  config: any,
+  isTranslation: boolean,
+  sendMessage: (data: any) => void
+) => {
   const apiEndpoint = getApiEndpoint("openrouter");
   const model = getModel("openrouter");
 
@@ -139,7 +193,8 @@ const callOpenRouterAPI = async (text: string, config: any, isTranslation: boole
           content: prompt
         }
       ],
-      max_tokens: 1000
+      max_tokens: 1000,
+      stream: true
     })
   });
 
@@ -147,12 +202,16 @@ const callOpenRouterAPI = async (text: string, config: any, isTranslation: boole
     throw new Error(`${isTranslation ? "Translation" : "Summarization"} failed`);
   }
 
-  const result = await response.json();
-  return result.choices?.[0]?.message?.content || result.content || result;
+  await handleStreamResponse(response, sendMessage);
 };
 
-// Cohere API call
-const callCohereAPI = async (text: string, config: any, isTranslation: boolean) => {
+// Cohere API call with streaming
+const callCohereAPI = async (
+  text: string,
+  config: any,
+  isTranslation: boolean,
+  sendMessage: (data: any) => void
+) => {
   const apiEndpoint = getApiEndpoint("cohere");
   const model = getModel("cohere");
 
@@ -170,7 +229,8 @@ const callCohereAPI = async (text: string, config: any, isTranslation: boolean) 
       model: model,
       prompt: prompt,
       max_tokens: 1000,
-      temperature: 0.7
+      temperature: 0.7,
+      stream: true
     })
   });
 
@@ -178,12 +238,16 @@ const callCohereAPI = async (text: string, config: any, isTranslation: boolean) 
     throw new Error(`${isTranslation ? "Translation" : "Summarization"} failed`);
   }
 
-  const result = await response.json();
-  return result.generations?.[0]?.text || result.content || result;
+  await handleStreamResponse(response, sendMessage);
 };
 
-// HuggingFace API call
-const callHuggingFaceAPI = async (text: string, config: any, isTranslation: boolean) => {
+// HuggingFace API call with streaming
+const callHuggingFaceAPI = async (
+  text: string,
+  config: any,
+  isTranslation: boolean,
+  sendMessage: (data: any) => void
+) => {
   const apiEndpoint = `${getApiEndpoint("huggingface")}/${getModel("huggingface")}`;
 
   const prompt = isTranslation
@@ -200,7 +264,8 @@ const callHuggingFaceAPI = async (text: string, config: any, isTranslation: bool
       inputs: prompt,
       parameters: {
         max_length: 1000,
-        temperature: 0.7
+        temperature: 0.7,
+        stream: true
       }
     })
   });
@@ -209,12 +274,16 @@ const callHuggingFaceAPI = async (text: string, config: any, isTranslation: bool
     throw new Error(`${isTranslation ? "Translation" : "Summarization"} failed`);
   }
 
-  const result = await response.json();
-  return result[0]?.generated_text || result.content || result;
+  await handleStreamResponse(response, sendMessage);
 };
 
-// Replicate API call
-const callReplicateAPI = async (text: string, config: any, isTranslation: boolean) => {
+// Replicate API call with streaming
+const callReplicateAPI = async (
+  text: string,
+  config: any,
+  isTranslation: boolean,
+  sendMessage: (data: any) => void
+) => {
   const apiEndpoint = getApiEndpoint("replicate");
   const model = getModel("replicate");
 
@@ -233,7 +302,8 @@ const callReplicateAPI = async (text: string, config: any, isTranslation: boolea
       input: {
         prompt: prompt,
         max_length: 1000
-      }
+      },
+      stream: true
     })
   });
 
@@ -241,12 +311,16 @@ const callReplicateAPI = async (text: string, config: any, isTranslation: boolea
     throw new Error(`${isTranslation ? "Translation" : "Summarization"} failed`);
   }
 
-  const result = await response.json();
-  return result.output || result.content || result;
+  await handleStreamResponse(response, sendMessage);
 };
 
-// Together AI API call
-const callTogetherAPI = async (text: string, config: any, isTranslation: boolean) => {
+// Together AI API call with streaming
+const callTogetherAPI = async (
+  text: string,
+  config: any,
+  isTranslation: boolean,
+  sendMessage: (data: any) => void
+) => {
   const apiEndpoint = getApiEndpoint("together");
   const model = getModel("together");
 
@@ -264,7 +338,8 @@ const callTogetherAPI = async (text: string, config: any, isTranslation: boolean
       model: model,
       prompt: prompt,
       max_tokens: 1000,
-      temperature: 0.7
+      temperature: 0.7,
+      stream: true
     })
   });
 
@@ -272,12 +347,16 @@ const callTogetherAPI = async (text: string, config: any, isTranslation: boolean
     throw new Error(`${isTranslation ? "Translation" : "Summarization"} failed`);
   }
 
-  const result = await response.json();
-  return result.output?.choices?.[0]?.text || result.content || result;
+  await handleStreamResponse(response, sendMessage);
 };
 
-// Local/Ollama API call
-const callLocalAPI = async (text: string, config: any, isTranslation: boolean) => {
+// Local/Ollama API call with streaming
+const callLocalAPI = async (
+  text: string,
+  config: any,
+  isTranslation: boolean,
+  sendMessage: (data: any) => void
+) => {
   const apiEndpoint = getApiEndpoint("local");
   const model = getModel("local");
 
@@ -285,6 +364,9 @@ const callLocalAPI = async (text: string, config: any, isTranslation: boolean) =
     ? `Translate the following text to English: "${text}"`
     : `Summarize the following text in a few concise sentences: "${text}"`;
 
+  console.log("callLocalAPI", apiEndpoint, model, prompt);
+  await new Promise((resolve) => setTimeout(resolve, 5000));
+  console.log("fetching...");
   const response = await fetch(apiEndpoint, {
     method: "POST",
     headers: {
@@ -293,60 +375,63 @@ const callLocalAPI = async (text: string, config: any, isTranslation: boolean) =
     body: JSON.stringify({
       model: model,
       prompt: prompt,
-      stream: false
+      stream: true
     })
   });
 
+  console.log({ response });
   if (!response.ok) {
     throw new Error(`${isTranslation ? "Translation" : "Summarization"} failed`);
   }
 
-  const result = await response.json();
-  return result.response || result.content || result;
+  await handleStreamResponse(response, sendMessage);
 };
 
 // Main function to handle API calls based on provider
-const callAPI = async (text: string, config: any, isTranslation: boolean) => {
+const callAPI = async (
+  text: string,
+  config: any,
+  isTranslation: boolean,
+  sendMessage: (data: any) => void
+) => {
   switch (config.provider) {
     case "anthropic":
-      return await callAnthropicAPI(text, config, isTranslation);
+      return await callAnthropicAPI(text, config, isTranslation, sendMessage);
     case "openai":
-      return await callOpenAIAPI(text, config, isTranslation);
+      return await callOpenAIAPI(text, config, isTranslation, sendMessage);
     case "openrouter":
-      return await callOpenRouterAPI(text, config, isTranslation);
+      return await callOpenRouterAPI(text, config, isTranslation, sendMessage);
     case "cohere":
-      return await callCohereAPI(text, config, isTranslation);
+      return await callCohereAPI(text, config, isTranslation, sendMessage);
     case "huggingface":
-      return await callHuggingFaceAPI(text, config, isTranslation);
+      return await callHuggingFaceAPI(text, config, isTranslation, sendMessage);
     case "replicate":
-      return await callReplicateAPI(text, config, isTranslation);
+      return await callReplicateAPI(text, config, isTranslation, sendMessage);
     case "together":
-      return await callTogetherAPI(text, config, isTranslation);
+      return await callTogetherAPI(text, config, isTranslation, sendMessage);
     default:
-      return await callLocalAPI(text, config, isTranslation);
+      return await callLocalAPI(text, config, isTranslation, sendMessage);
   }
 };
 
 // Function to translate text using the configured API
-const translateText = async (text: string, config: any) => {
+const translateText = async (text: string, config: any, sendMessage: (data: any) => void) => {
   try {
     console.log("translateText", config.provider);
-    const result = await callAPI(text, config, true);
-    return { success: true, data: result };
+    await callAPI(text, config, true, sendMessage);
   } catch (error) {
     console.error("Translation error:", error);
-    return { success: false, error: "Translation failed" };
+    sendMessage({ type: "error", error: "Translation failed" });
   }
 };
 
 // Function to summarize text using the configured API
-const summarizeText = async (text: string, config: any) => {
+const summarizeText = async (text: string, config: any, sendMessage: (data: any) => void) => {
   try {
-    const result = await callAPI(text, config, false);
-    return { success: true, data: result };
+    await callAPI(text, config, false, sendMessage);
   } catch (error) {
     console.error("Summarization error:", error);
-    return { success: false, error: "Summarization failed" };
+    sendMessage({ type: "error", error: "Summarization failed" });
   }
 };
 
@@ -354,11 +439,42 @@ const summarizeText = async (text: string, config: any) => {
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "translate") {
     console.log("translateText", request.text, request.config);
-    translateText(request.text, request.config).then(sendResponse);
-    return true; // Keep the message channel open for async response
+
+    // Send initial response to content script
+    sendResponse({ success: true, streaming: true });
+
+    // Use sendMessage to communicate with content script instead of port
+    const sendStreamMessage = (data: any) => {
+      chrome.tabs
+        .sendMessage(sender.tab!.id!, {
+          type: "stream",
+          data: data
+        })
+        .catch((error) => {
+          console.error("Failed to send stream message:", error);
+        });
+    };
+
+    translateText(request.text, request.config, sendStreamMessage);
+    return true;
   } else if (request.action === "summarize") {
-    summarizeText(request.text, request.config).then(sendResponse);
-    return true; // Keep the message channel open for async response
+    // Send initial response to content script
+    sendResponse({ success: true, streaming: true });
+
+    // Use sendMessage to communicate with content script instead of port
+    const sendStreamMessage = (data: any) => {
+      chrome.tabs
+        .sendMessage(sender.tab!.id!, {
+          type: "stream",
+          data: data
+        })
+        .catch((error) => {
+          console.error("Failed to send stream message:", error);
+        });
+    };
+
+    summarizeText(request.text, request.config, sendStreamMessage);
+    return true;
   }
 });
 

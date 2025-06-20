@@ -6,7 +6,42 @@ interface Config {
   apiKey: string;
 }
 
-// Create and show result popup
+// Create and show streaming result popup
+const showStreamingResult = () => {
+  const popup = document.createElement("div");
+  popup.className = "prompt-lens-result-popup";
+  popup.innerHTML = `
+    <div class="prompt-lens-result-content">
+      <div class="prompt-lens-streaming-content">
+        <div class="prompt-lens-streaming-text"></div>
+        <div class="prompt-lens-streaming-indicator">
+          <span class="prompt-lens-dot"></span>
+          <span class="prompt-lens-dot"></span>
+          <span class="prompt-lens-dot"></span>
+        </div>
+      </div>
+      <button class="prompt-lens-close-btn">×</button>
+    </div>
+  `;
+  document.body.appendChild(popup);
+
+  // Position the result popup to the right of the buttons
+  if (buttonsContainer) {
+    const buttonRect = buttonsContainer.getBoundingClientRect();
+    popup.style.position = "fixed";
+    popup.style.left = `${buttonRect.right + 10}px`;
+    popup.style.top = `${buttonRect.top}px`;
+  }
+
+  const closeBtn = popup.querySelector(".prompt-lens-close-btn");
+  closeBtn?.addEventListener("click", () => {
+    popup.remove();
+  });
+
+  return popup;
+};
+
+// Create and show result popup (for non-streaming fallback)
 const showResult = (text: string) => {
   const popup = document.createElement("div");
   popup.className = "prompt-lens-result-popup";
@@ -57,6 +92,67 @@ const showError = (message: string) => {
   }, 5000);
 };
 
+// Extract text content from streaming response based on provider
+const extractTextFromChunk = (chunk: any, provider: string): string => {
+  switch (provider) {
+    case "openai":
+    case "openrouter":
+      return chunk.choices?.[0]?.delta?.content || chunk.choices?.[0]?.message?.content || "";
+    case "anthropic":
+      return chunk.content?.[0]?.text || chunk.delta?.text || "";
+    case "cohere":
+      return chunk.text || chunk.generations?.[0]?.text || "";
+    case "huggingface":
+      return chunk.generated_text || chunk[0]?.generated_text || "";
+    case "replicate":
+      return chunk.output || "";
+    case "together":
+      return chunk.output?.choices?.[0]?.text || "";
+    default: // local/ollama
+      return chunk.response || chunk.content || "";
+  }
+};
+
+// Handle streaming response
+const handleStreamingResponse = (provider: string) => {
+  const popup = showStreamingResult();
+  const textElement = popup.querySelector(".prompt-lens-streaming-text") as HTMLElement;
+  const indicator = popup.querySelector(".prompt-lens-streaming-indicator") as HTMLElement;
+  let fullText = "";
+
+  // Listen for stream messages from background script
+  const messageListener = (message: any) => {
+    if (message.type === "stream") {
+      const streamData = message.data;
+
+      if (streamData.type === "chunk") {
+        const chunkText = extractTextFromChunk(streamData.data, provider);
+        if (chunkText) {
+          fullText += chunkText;
+          textElement.textContent = fullText;
+        }
+      } else if (streamData.type === "done") {
+        // Hide the streaming indicator
+        if (indicator) {
+          indicator.style.display = "none";
+        }
+        // Remove the message listener
+        chrome.runtime.onMessage.removeListener(messageListener);
+      } else if (streamData.type === "error") {
+        showError(streamData.error || "Operation failed");
+        popup.remove();
+        // Remove the message listener
+        chrome.runtime.onMessage.removeListener(messageListener);
+      }
+    }
+  };
+
+  // Add the message listener
+  chrome.runtime.onMessage.addListener(messageListener);
+
+  return popup;
+};
+
 // Create floating buttons
 const createFloatingButtons = () => {
   const container = document.createElement("div");
@@ -105,7 +201,11 @@ const createFloatingButtons = () => {
                 config: config
               },
               (response) => {
-                if (response.success) {
+                if (response.success && response.streaming) {
+                  // Handle streaming response
+                  handleStreamingResponse(config.provider);
+                } else if (response.success) {
+                  // Fallback to non-streaming
                   showResult(response.data);
                 } else {
                   showError(response.error || "Translation failed");
@@ -137,7 +237,11 @@ const createFloatingButtons = () => {
                 config: config
               },
               (response) => {
-                if (response.success) {
+                if (response.success && response.streaming) {
+                  // Handle streaming response
+                  handleStreamingResponse(config.provider);
+                } else if (response.success) {
+                  // Fallback to non-streaming
                   showResult(response.data);
                 } else {
                   showError(response.error || "Summarization failed");
