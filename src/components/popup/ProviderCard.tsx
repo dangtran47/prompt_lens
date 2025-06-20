@@ -10,8 +10,9 @@ interface ProviderCardProps {
     model: string;
   };
   isDefault: boolean;
+  disabled?: boolean;
   onSetDefault: (providerKey: string) => void;
-  onEdit: (providerKey: string) => void;
+  onEdit: () => void;
   onRemove: (providerKey: string) => void;
 }
 
@@ -19,16 +20,21 @@ export const ProviderCard: React.FC<ProviderCardProps> = ({
   providerKey,
   provider,
   isDefault,
+  disabled = false,
   onSetDefault,
   onEdit,
   onRemove
 }) => {
   return (
     <div
-      className={`border rounded-lg p-3 cursor-pointer transition-colors relative ${
-        isDefault ? "bg-blue-50 border-blue-200" : "bg-gray-50 hover:bg-gray-100"
+      className={`border rounded-lg p-3 transition-colors relative ${
+        disabled
+          ? "bg-gray-100 border-gray-200 cursor-not-allowed opacity-60"
+          : isDefault
+          ? "bg-blue-50 border-blue-200 cursor-pointer"
+          : "bg-gray-50 hover:bg-gray-100 cursor-pointer"
       }`}
-      onClick={() => !isDefault && onSetDefault(providerKey)}
+      onClick={() => !disabled && !isDefault && onSetDefault(providerKey)}
     >
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
@@ -38,9 +44,12 @@ export const ProviderCard: React.FC<ProviderCardProps> = ({
           <Button
             variant="outline"
             size="sm"
+            disabled={disabled}
             onClick={(e) => {
               e.stopPropagation();
-              onEdit(providerKey);
+              if (!disabled) {
+                onEdit();
+              }
             }}
           >
             Edit
@@ -48,9 +57,12 @@ export const ProviderCard: React.FC<ProviderCardProps> = ({
           <Button
             variant="outline"
             size="sm"
+            disabled={disabled}
             onClick={(e) => {
               e.stopPropagation();
-              onRemove(providerKey);
+              if (!disabled) {
+                onRemove(providerKey);
+              }
             }}
           >
             Remove

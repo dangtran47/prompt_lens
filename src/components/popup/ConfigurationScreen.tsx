@@ -1,37 +1,39 @@
-import React from "react";
+import React, { useState } from "react";
 import keys from "lodash/fp/keys";
 import { Button } from "../ui/button";
 import { Config } from "../../types/config";
 import { ProviderCard } from "./ProviderCard";
 import { ProviderForm } from "./ProviderForm";
 
+type Provider = {
+  providerKey?: string;
+  name: string;
+  apiKey: string;
+  model: string;
+};
+
 interface ConfigurationScreenProps {
   config: Config;
-  editingProviderData: {
-    key: string;
-    data: { name: string; apiKey: string; model: string };
-  } | null;
-  onAddProvider: () => void;
+  onAddOrUpdateProvider: (provider: Provider) => void;
   onRemoveProvider: (providerKey: string) => void;
   onSetDefaultProvider: (providerKey: string) => void;
-  onUpdateProvider: (providerKey: string, field: string, value: string) => void;
-  onSaveEditingProvider: () => void;
-  onCancelEditingProvider: () => void;
-  onEditProvider: (providerKey: string) => void;
 }
 
 export const ConfigurationScreen: React.FC<ConfigurationScreenProps> = ({
   config,
-  editingProviderData,
-  onAddProvider,
+  onAddOrUpdateProvider,
   onRemoveProvider,
-  onSetDefaultProvider,
-  onUpdateProvider,
-  onSaveEditingProvider,
-  onCancelEditingProvider,
-  onEditProvider
+  onSetDefaultProvider
 }) => {
   const numProviders = keys(config?.providers).length;
+  const [isAddingProvider, setIsAddingProvider] = useState(false);
+  const [selectedProviderToEdit, setSelectedProviderToEdit] = useState<Provider | undefined>(
+    undefined
+  );
+  const onEditClick = (providerKey: string, provider: Provider) => {
+    setSelectedProviderToEdit({ ...provider, providerKey });
+  };
+
   return (
     <div className="p-6 bg-white">
       <div className="text-center mb-6">
@@ -49,12 +51,13 @@ export const ConfigurationScreen: React.FC<ConfigurationScreenProps> = ({
             <div className="space-y-2">
               {Object.entries(config.providers).map(([key, provider]) => (
                 <ProviderCard
+                  disabled={isAddingProvider}
                   key={key}
                   providerKey={key}
                   provider={provider}
                   isDefault={config.defaultProvider === key}
                   onSetDefault={onSetDefaultProvider}
-                  onEdit={onEditProvider}
+                  onEdit={() => onEditClick(key, provider)}
                   onRemove={onRemoveProvider}
                 />
               ))}
@@ -63,18 +66,34 @@ export const ConfigurationScreen: React.FC<ConfigurationScreenProps> = ({
         )}
 
         {/* Add New Provider */}
-        <Button variant="outline" className="w-full" onClick={onAddProvider}>
+        <Button
+          variant="outline"
+          className="w-full"
+          onClick={() => setIsAddingProvider(true)}
+          disabled={!!selectedProviderToEdit}
+        >
           + Add New Provider
         </Button>
 
-        {/* Edit Provider Form */}
-        {editingProviderData && (
+        {isAddingProvider && (
           <ProviderForm
-            providerKey={editingProviderData.key}
-            provider={editingProviderData.data}
-            onUpdateProvider={onUpdateProvider}
-            onCancel={onCancelEditingProvider}
-            onDone={onSaveEditingProvider}
+            provider={undefined}
+            onCancel={() => setIsAddingProvider(false)}
+            onDone={(provider) => {
+              onAddOrUpdateProvider(provider);
+              setIsAddingProvider(false);
+            }}
+          />
+        )}
+
+        {selectedProviderToEdit && (
+          <ProviderForm
+            provider={selectedProviderToEdit}
+            onCancel={() => setSelectedProviderToEdit(undefined)}
+            onDone={(provider) => {
+              onAddOrUpdateProvider(provider);
+              setSelectedProviderToEdit(undefined);
+            }}
           />
         )}
       </div>

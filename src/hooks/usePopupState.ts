@@ -1,8 +1,16 @@
 import { useState, useEffect } from "react";
 import { Config } from "../types/config";
 import { ConfigService } from "../services/configService";
+import keys from "lodash/fp/keys";
 
-const isProviderComplete = (provider: { name: string; apiKey: string; model: string }) => {
+type Provider = {
+  providerKey?: string;
+  name: string;
+  apiKey: string;
+  model: string;
+};
+
+const isProviderComplete = (provider: Provider) => {
   return !!(provider.name && provider.apiKey && provider.model);
 };
 
@@ -52,16 +60,6 @@ export const usePopupState = () => {
     setIsConfiguring(true);
   };
 
-  // Start adding a new provider (do not add to config yet)
-  const addProvider = () => {
-    const providerKey = `provider_${Date.now()}`;
-    setEditingProvider(providerKey);
-    setEditingProviderData({
-      key: providerKey,
-      data: { name: "", apiKey: "", model: "" }
-    });
-  };
-
   // Remove provider from config
   const removeProvider = (providerKey: string) => {
     const newProviders = { ...config.providers };
@@ -69,7 +67,8 @@ export const usePopupState = () => {
     const newConfig = {
       ...config,
       providers: newProviders,
-      defaultProvider: config.defaultProvider === providerKey ? "" : config.defaultProvider
+      defaultProvider:
+        config.defaultProvider === providerKey ? keys(newProviders)[0] : config.defaultProvider
     };
     setConfig(newConfig);
     saveConfig(newConfig);
@@ -86,55 +85,15 @@ export const usePopupState = () => {
   };
 
   // Start editing an existing provider
-  const editProvider = (providerKey: string) => {
-    const existingProvider = config.providers[providerKey];
-    if (existingProvider) {
-      setEditingProvider(providerKey);
-      setEditingProviderData({
-        key: providerKey,
-        data: { ...existingProvider }
-      });
-    }
-  };
-
-  // Update local editing provider data
-  const updateProvider = (providerKey: string, field: string, value: string) => {
-    if (editingProviderData && editingProviderData.key === providerKey) {
-      setEditingProviderData({
-        key: providerKey,
-        data: { ...editingProviderData.data, [field]: value }
-      });
-    } else {
-      // Editing an existing provider (make a local copy if not already)
-      setEditingProvider(providerKey);
-      setEditingProviderData({
-        key: providerKey,
-        data: { ...config.providers[providerKey], [field]: value }
-      });
-    }
-  };
-
-  // Save provider to config if complete
-  const saveEditingProvider = () => {
-    if (editingProviderData && isProviderComplete(editingProviderData.data)) {
-      const newConfig = {
-        ...config,
-        providers: {
-          ...config.providers,
-          [editingProviderData.key]: editingProviderData.data
-        }
-      };
-      setConfig(newConfig);
-      saveConfig(newConfig);
-      setEditingProvider(null);
-      setEditingProviderData(null);
-    }
-  };
-
-  // Cancel editing/adding provider
-  const cancelEditingProvider = () => {
-    setEditingProvider(null);
-    setEditingProviderData(null);
+  const addOrUpdateProvider = (provider: Provider) => {
+    const providerKey = provider.providerKey || `provider_${Date.now()}`;
+    const newProviders = { ...config.providers, [providerKey]: provider };
+    const newConfig = {
+      ...config,
+      providers: newProviders
+    };
+    setConfig(newConfig);
+    saveConfig(newConfig);
   };
 
   const resetConfig = () => {
@@ -157,16 +116,11 @@ export const usePopupState = () => {
 
     // Actions
     handleModeSelect,
-    addProvider,
+    addOrUpdateProvider,
     removeProvider,
     setDefaultProvider,
-    editProvider,
-    updateProvider,
-    saveEditingProvider,
-    cancelEditingProvider,
     resetConfig,
     setIsConfiguring,
-    setEditingProvider,
     setCurrentMode
   };
 };

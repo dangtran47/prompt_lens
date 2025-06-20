@@ -6,31 +6,41 @@ import { getProviderDisplayName, getProviderOptions } from "../../utils/provider
 import { ModelsService } from "../../services/modelsService";
 import { Model } from "../../types/config";
 
+type Provider = {
+  providerKey?: string;
+  name: string;
+  apiKey: string;
+  model: string;
+};
+
 interface ProviderFormProps {
-  providerKey: string;
-  provider: {
-    name: string;
-    apiKey: string;
-    model: string;
-  };
-  onUpdateProvider: (providerKey: string, field: string, value: string) => void;
+  provider?: Provider;
   onCancel: () => void;
-  onDone: () => void;
+  onDone: (provider: Provider) => void;
 }
 
 export const ProviderForm: React.FC<ProviderFormProps> = ({
-  providerKey,
-  provider,
-  onUpdateProvider,
+  provider: initialProvider = {
+    providerKey: undefined,
+    name: "",
+    apiKey: "",
+    model: ""
+  },
   onCancel,
   onDone
 }) => {
   const [models, setModels] = useState<Model[]>([]);
   const [isLoadingModels, setIsLoadingModels] = useState(false);
   const [modelError, setModelError] = useState("");
+  const [provider, setProvider] = useState<Provider>(initialProvider);
 
   const hasProviderAndKey = provider.name && provider.apiKey;
   const isProviderComplete = provider.name && provider.apiKey && provider.model;
+
+  const onDoneClick = () => {
+    console.log("onDoneClick", provider);
+    onDone(provider);
+  };
 
   // Fetch models when provider or API key changes
   useEffect(() => {
@@ -61,7 +71,9 @@ export const ProviderForm: React.FC<ProviderFormProps> = ({
   return (
     <div className="border rounded-lg p-4 bg-blue-50">
       <div className="text-sm font-medium text-blue-800 mb-3">
-        {provider.name ? `Edit ${getProviderDisplayName(provider.name)}` : "Add New Provider"}
+        {initialProvider.providerKey
+          ? `Edit ${getProviderDisplayName(initialProvider.name)}`
+          : "Add New Provider"}
       </div>
 
       <div className="space-y-3">
@@ -69,7 +81,7 @@ export const ProviderForm: React.FC<ProviderFormProps> = ({
           <label className="block text-xs font-medium text-blue-700 mb-1">Provider Type</label>
           <Select
             value={provider.name || ""}
-            onChange={(e) => onUpdateProvider(providerKey, "name", e.target.value)}
+            onChange={(e) => setProvider({ ...provider, name: e.target.value })}
           >
             <option value="">Choose a provider...</option>
             {getProviderOptions().map((option) => (
@@ -86,7 +98,7 @@ export const ProviderForm: React.FC<ProviderFormProps> = ({
             type="password"
             placeholder="Enter your API key"
             value={provider.apiKey || ""}
-            onChange={(e) => onUpdateProvider(providerKey, "apiKey", e.target.value)}
+            onChange={(e) => setProvider({ ...provider, apiKey: e.target.value })}
           />
         </div>
 
@@ -98,7 +110,7 @@ export const ProviderForm: React.FC<ProviderFormProps> = ({
             ) : (
               <Select
                 value={provider.model || ""}
-                onChange={(e) => onUpdateProvider(providerKey, "model", e.target.value)}
+                onChange={(e) => setProvider({ ...provider, model: e.target.value })}
                 disabled={isLoadingModels}
               >
                 <option value="">Choose a model...</option>
@@ -127,7 +139,7 @@ export const ProviderForm: React.FC<ProviderFormProps> = ({
           variant="default"
           size="sm"
           className="flex-1"
-          onClick={onDone}
+          onClick={onDoneClick}
           disabled={!isProviderComplete}
         >
           Done

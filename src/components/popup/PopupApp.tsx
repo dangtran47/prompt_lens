@@ -10,20 +10,14 @@ export const PopupApp: React.FC = () => {
     currentMode,
     config,
     isConfiguring,
-    editingProviderData,
 
     // Actions
     handleModeSelect,
-    addProvider,
+    addOrUpdateProvider,
     removeProvider,
     setDefaultProvider,
-    editProvider,
-    updateProvider,
-    saveEditingProvider,
-    cancelEditingProvider,
     resetConfig,
-    setIsConfiguring,
-    setCurrentMode
+    setIsConfiguring
   } = usePopupState();
 
   // Mode selection screen
@@ -38,19 +32,9 @@ export const PopupApp: React.FC = () => {
     return (
       <ConfigurationScreen
         config={config}
-        editingProviderData={editingProviderData}
-        onAddProvider={addProvider}
+        onAddOrUpdateProvider={addOrUpdateProvider}
         onRemoveProvider={removeProvider}
         onSetDefaultProvider={setDefaultProvider}
-        onUpdateProvider={updateProvider}
-        onSaveEditingProvider={saveEditingProvider}
-        onCancelEditingProvider={cancelEditingProvider}
-        onEditProvider={editProvider}
-        onCancel={() => {
-          setIsConfiguring(false);
-          setCurrentMode(null);
-        }}
-        onSave={() => setIsConfiguring(false)}
       />
     );
   }
