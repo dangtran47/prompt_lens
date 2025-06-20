@@ -92,21 +92,26 @@ export const ProviderForm: React.FC<ProviderFormProps> = ({
         {hasProviderAndKey && (
           <div>
             <label className="block text-xs font-medium text-blue-700 mb-1">Model</label>
-            {isLoadingModels ? (
-              <div className="text-xs text-blue-600">Loading models...</div>
-            ) : modelError ? (
+            {modelError ? (
               <div className="text-xs text-red-600 bg-red-50 p-2 rounded">{modelError}</div>
             ) : (
               <Select
                 value={provider.model || ""}
                 onChange={(e) => onUpdateProvider(providerKey, "model", e.target.value)}
+                disabled={isLoadingModels}
               >
                 <option value="">Choose a model...</option>
-                {models.map((model) => (
-                  <option key={model.id} value={model.id}>
-                    {model.display_name || model.name || model.id}
-                  </option>
-                ))}
+                {isLoadingModels ? (
+                  provider.model && !models.find((m) => m.id === provider.model) ? (
+                    <option value={provider.model}>{provider.model}</option>
+                  ) : null
+                ) : (
+                  models.map((model) => (
+                    <option key={model.id} value={model.id}>
+                      {model.display_name || model.name || model.id}
+                    </option>
+                  ))
+                )}
               </Select>
             )}
           </div>
