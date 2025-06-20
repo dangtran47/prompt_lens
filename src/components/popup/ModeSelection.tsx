@@ -1,4 +1,5 @@
 import React from "react";
+import keys from "lodash/fp/keys";
 import { Button } from "../ui/button";
 import { Config } from "../../types/config";
 import { getProviderDisplayName } from "../../utils/providerUtils";
@@ -14,6 +15,7 @@ export const ModeSelection: React.FC<ModeSelectionProps> = ({
   onModeSelect,
   onResetConfig
 }) => {
+  const numProviders = keys(config?.providers).length;
   return (
     <div className="p-6 bg-white">
       <div className="text-center mb-6">
@@ -39,11 +41,11 @@ export const ModeSelection: React.FC<ModeSelectionProps> = ({
         </Button>
       </div>
 
-      {config.mode && Object.keys(config?.providers || {}).length > 0 && (
+      {config.mode && numProviders > 0 && (
         <div className="mt-4 pt-4 border-t">
           <div className="text-xs text-gray-500 mb-2">Current Configuration:</div>
           <div className="text-sm text-gray-700">
-            Mode: {config.mode} • Providers: {Object.keys(config.providers).length}
+            Mode: {config.mode} • Providers: {numProviders}
             {config.defaultProvider &&
               ` • Default: ${getProviderDisplayName(
                 config.providers[config.defaultProvider]?.name || "Unknown"

@@ -1,4 +1,5 @@
 import React from "react";
+import keys from "lodash/fp/keys";
 import { Button } from "../ui/button";
 import { Config } from "../../types/config";
 import { getProviderDisplayName } from "../../utils/providerUtils";
@@ -14,6 +15,7 @@ export const ConfigurationComplete: React.FC<ConfigurationCompleteProps> = ({
   onManageProviders,
   onResetConfig
 }) => {
+  const numProviders = keys(config?.providers).length;
   return (
     <div className="p-6 bg-white">
       <div className="text-center mb-4">
@@ -24,9 +26,7 @@ export const ConfigurationComplete: React.FC<ConfigurationCompleteProps> = ({
       <div className="bg-gray-50 rounded-lg p-4 mb-4">
         <div className="text-sm">
           <div className="font-medium text-gray-700">Mode: {config.mode}</div>
-          <div className="text-gray-600">
-            Providers: {Object.keys(config?.providers || {}).length}
-          </div>
+          <div className="text-gray-600">Providers: {numProviders}</div>
           {config.defaultProvider && (
             <div className="text-gray-600">
               Default:{" "}

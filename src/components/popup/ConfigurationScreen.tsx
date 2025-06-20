@@ -1,4 +1,5 @@
 import React from "react";
+import keys from "lodash/fp/keys";
 import { Button } from "../ui/button";
 import { Config } from "../../types/config";
 import { ProviderCard } from "./ProviderCard";
@@ -29,6 +30,7 @@ export const ConfigurationScreen: React.FC<ConfigurationScreenProps> = ({
   onCancel,
   onSave
 }) => {
+  const numProviders = keys(config?.providers).length;
   return (
     <div className="p-6 bg-white">
       <div className="text-center mb-6">
@@ -38,7 +40,7 @@ export const ConfigurationScreen: React.FC<ConfigurationScreenProps> = ({
 
       <div className="space-y-4">
         {/* Existing Providers */}
-        {Object.keys(config?.providers || {}).length > 0 && (
+        {numProviders > 0 && (
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Configured Providers
@@ -85,7 +87,7 @@ export const ConfigurationScreen: React.FC<ConfigurationScreenProps> = ({
           variant="default"
           className="flex-1"
           onClick={onSave}
-          disabled={Object.keys(config?.providers || {}).length === 0 || !config.defaultProvider}
+          disabled={numProviders === 0 || !config.defaultProvider}
         >
           Save Configuration
         </Button>
