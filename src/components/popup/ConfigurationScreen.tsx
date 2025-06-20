@@ -8,10 +8,16 @@ import { ProviderForm } from "./ProviderForm";
 interface ConfigurationScreenProps {
   config: Config;
   editingProvider: string | null;
+  editingProviderData: {
+    key: string;
+    data: { name: string; apiKey: string; model: string };
+  } | null;
   onAddProvider: () => void;
   onRemoveProvider: (providerKey: string) => void;
   onSetDefaultProvider: (providerKey: string) => void;
   onUpdateProvider: (providerKey: string, field: string, value: string) => void;
+  onSaveEditingProvider: () => void;
+  onCancelEditingProvider: () => void;
   onSetEditingProvider: (providerKey: string | null) => void;
   onCancel: () => void;
   onSave: () => void;
@@ -20,10 +26,13 @@ interface ConfigurationScreenProps {
 export const ConfigurationScreen: React.FC<ConfigurationScreenProps> = ({
   config,
   editingProvider,
+  editingProviderData,
   onAddProvider,
   onRemoveProvider,
   onSetDefaultProvider,
   onUpdateProvider,
+  onSaveEditingProvider,
+  onCancelEditingProvider,
   onSetEditingProvider,
   onCancel,
   onSave
@@ -65,13 +74,13 @@ export const ConfigurationScreen: React.FC<ConfigurationScreenProps> = ({
         </Button>
 
         {/* Edit Provider Form */}
-        {editingProvider && (
+        {editingProviderData && (
           <ProviderForm
-            providerKey={editingProvider}
-            provider={config.providers[editingProvider]}
+            providerKey={editingProviderData.key}
+            provider={editingProviderData.data}
             onUpdateProvider={onUpdateProvider}
-            onCancel={() => onSetEditingProvider(null)}
-            onDone={() => onSetEditingProvider(null)}
+            onCancel={onCancelEditingProvider}
+            onDone={onSaveEditingProvider}
           />
         )}
       </div>

@@ -11,6 +11,7 @@ export const PopupApp: React.FC = () => {
     config,
     isConfiguring,
     editingProvider,
+    editingProviderData,
 
     // Actions
     handleModeSelect,
@@ -18,6 +19,8 @@ export const PopupApp: React.FC = () => {
     removeProvider,
     setDefaultProvider,
     updateProvider,
+    saveEditingProvider,
+    cancelEditingProvider,
     resetConfig,
     setIsConfiguring,
     setEditingProvider,
@@ -37,10 +40,13 @@ export const PopupApp: React.FC = () => {
       <ConfigurationScreen
         config={config}
         editingProvider={editingProvider}
+        editingProviderData={editingProviderData}
         onAddProvider={addProvider}
         onRemoveProvider={removeProvider}
         onSetDefaultProvider={setDefaultProvider}
         onUpdateProvider={updateProvider}
+        onSaveEditingProvider={saveEditingProvider}
+        onCancelEditingProvider={cancelEditingProvider}
         onSetEditingProvider={setEditingProvider}
         onCancel={() => {
           setIsConfiguring(false);
