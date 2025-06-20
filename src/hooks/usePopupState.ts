@@ -52,12 +52,8 @@ export const usePopupState = () => {
   };
 
   const handleModeSelect = (mode: "online" | "local") => {
-    if (mode === "online") {
-      // Online mode is disabled for now
-      return;
-    }
+    saveConfig({ ...config, mode });
     setCurrentMode(mode);
-    setIsConfiguring(true);
   };
 
   // Remove provider from config
