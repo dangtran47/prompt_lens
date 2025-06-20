@@ -85,6 +85,18 @@ export const usePopupState = () => {
     saveConfig(newConfig);
   };
 
+  // Start editing an existing provider
+  const editProvider = (providerKey: string) => {
+    const existingProvider = config.providers[providerKey];
+    if (existingProvider) {
+      setEditingProvider(providerKey);
+      setEditingProviderData({
+        key: providerKey,
+        data: { ...existingProvider }
+      });
+    }
+  };
+
   // Update local editing provider data
   const updateProvider = (providerKey: string, field: string, value: string) => {
     if (editingProviderData && editingProviderData.key === providerKey) {
@@ -148,6 +160,7 @@ export const usePopupState = () => {
     addProvider,
     removeProvider,
     setDefaultProvider,
+    editProvider,
     updateProvider,
     saveEditingProvider,
     cancelEditingProvider,

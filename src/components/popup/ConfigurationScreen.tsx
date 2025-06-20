@@ -7,7 +7,6 @@ import { ProviderForm } from "./ProviderForm";
 
 interface ConfigurationScreenProps {
   config: Config;
-  editingProvider: string | null;
   editingProviderData: {
     key: string;
     data: { name: string; apiKey: string; model: string };
@@ -18,14 +17,13 @@ interface ConfigurationScreenProps {
   onUpdateProvider: (providerKey: string, field: string, value: string) => void;
   onSaveEditingProvider: () => void;
   onCancelEditingProvider: () => void;
-  onSetEditingProvider: (providerKey: string | null) => void;
+  onEditProvider: (providerKey: string) => void;
   onCancel: () => void;
   onSave: () => void;
 }
 
 export const ConfigurationScreen: React.FC<ConfigurationScreenProps> = ({
   config,
-  editingProvider,
   editingProviderData,
   onAddProvider,
   onRemoveProvider,
@@ -33,7 +31,7 @@ export const ConfigurationScreen: React.FC<ConfigurationScreenProps> = ({
   onUpdateProvider,
   onSaveEditingProvider,
   onCancelEditingProvider,
-  onSetEditingProvider,
+  onEditProvider,
   onCancel,
   onSave
 }) => {
@@ -60,7 +58,7 @@ export const ConfigurationScreen: React.FC<ConfigurationScreenProps> = ({
                   provider={provider}
                   isDefault={config.defaultProvider === key}
                   onSetDefault={onSetDefaultProvider}
-                  onEdit={onSetEditingProvider}
+                  onEdit={onEditProvider}
                   onRemove={onRemoveProvider}
                 />
               ))}
