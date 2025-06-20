@@ -30,6 +30,7 @@ export const ProviderForm: React.FC<ProviderFormProps> = ({
   const [modelError, setModelError] = useState("");
 
   const hasProviderAndKey = provider.name && provider.apiKey;
+  const isProviderComplete = provider.name && provider.apiKey && provider.model;
 
   // Fetch models when provider or API key changes
   useEffect(() => {
@@ -122,7 +123,13 @@ export const ProviderForm: React.FC<ProviderFormProps> = ({
         <Button variant="outline" size="sm" className="flex-1" onClick={onCancel}>
           Cancel
         </Button>
-        <Button variant="default" size="sm" className="flex-1" onClick={onDone}>
+        <Button
+          variant="default"
+          size="sm"
+          className="flex-1"
+          onClick={onDone}
+          disabled={!isProviderComplete}
+        >
           Done
         </Button>
       </div>
