@@ -18,8 +18,6 @@ interface ConfigurationScreenProps {
   onSaveEditingProvider: () => void;
   onCancelEditingProvider: () => void;
   onEditProvider: (providerKey: string) => void;
-  onCancel: () => void;
-  onSave: () => void;
 }
 
 export const ConfigurationScreen: React.FC<ConfigurationScreenProps> = ({
@@ -31,9 +29,7 @@ export const ConfigurationScreen: React.FC<ConfigurationScreenProps> = ({
   onUpdateProvider,
   onSaveEditingProvider,
   onCancelEditingProvider,
-  onEditProvider,
-  onCancel,
-  onSave
+  onEditProvider
 }) => {
   const numProviders = keys(config?.providers).length;
   return (
@@ -81,20 +77,6 @@ export const ConfigurationScreen: React.FC<ConfigurationScreenProps> = ({
             onDone={onSaveEditingProvider}
           />
         )}
-      </div>
-
-      <div className="flex gap-2 mt-6">
-        <Button variant="outline" className="flex-1" onClick={onCancel}>
-          Cancel
-        </Button>
-        <Button
-          variant="default"
-          className="flex-1"
-          onClick={onSave}
-          disabled={numProviders === 0 || !config.defaultProvider}
-        >
-          Save Configuration
-        </Button>
       </div>
     </div>
   );
