@@ -132,7 +132,7 @@ const handleStreamingResponse = (provider: string) => {
           textElement.textContent = fullText;
         }
       } else if (streamData.type === "done") {
-        // Hide the streaming indicator
+        // Stop loading - hide the streaming indicator
         if (indicator) {
           indicator.style.display = "none";
         }

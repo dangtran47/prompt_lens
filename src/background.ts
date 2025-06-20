@@ -54,7 +54,11 @@ const handleStreamResponse = async (response: Response, sendMessage: (data: any)
   try {
     while (true) {
       const { done, value } = await reader.read();
-      if (done) break;
+      if (done) {
+        // Send done message when stream is complete
+        sendMessage({ type: "done" });
+        break;
+      }
 
       const chunk = decoder.decode(value, { stream: true });
       const lines = chunk.split("\n");
