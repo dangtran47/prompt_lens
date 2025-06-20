@@ -1,3 +1,6 @@
+import { MOCK_CONFIG } from "./config/mockConfig";
+import { callMockAPI } from "./services/mockService";
+
 // Function to get API endpoint based on provider
 const getApiEndpoint = (provider: string): string => {
   switch (provider) {
@@ -98,6 +101,10 @@ const callAnthropicAPI = async (
   isTranslation: boolean,
   sendMessage: (data: any) => void
 ) => {
+  if (MOCK_CONFIG.ENABLE_MOCK_API) {
+    return await callMockAPI(text, "anthropic", isTranslation, sendMessage);
+  }
+
   const apiEndpoint = getApiEndpoint("anthropic");
   const model = getModel("anthropic", config);
 
@@ -142,6 +149,10 @@ const callOpenAIAPI = async (
   isTranslation: boolean,
   sendMessage: (data: any) => void
 ) => {
+  if (MOCK_CONFIG.ENABLE_MOCK_API) {
+    return await callMockAPI(text, "openai", isTranslation, sendMessage);
+  }
+
   const apiEndpoint = getApiEndpoint("openai");
   const model = getModel("openai", config);
 
@@ -182,6 +193,10 @@ const callOpenRouterAPI = async (
   isTranslation: boolean,
   sendMessage: (data: any) => void
 ) => {
+  if (MOCK_CONFIG.ENABLE_MOCK_API) {
+    return await callMockAPI(text, "openrouter", isTranslation, sendMessage);
+  }
+
   const apiEndpoint = getApiEndpoint("openrouter");
   const model = getModel("openrouter", config);
 
@@ -222,6 +237,10 @@ const callCohereAPI = async (
   isTranslation: boolean,
   sendMessage: (data: any) => void
 ) => {
+  if (MOCK_CONFIG.ENABLE_MOCK_API) {
+    return await callMockAPI(text, "cohere", isTranslation, sendMessage);
+  }
+
   const apiEndpoint = getApiEndpoint("cohere");
   const model = getModel("cohere", config);
 
@@ -258,6 +277,10 @@ const callHuggingFaceAPI = async (
   isTranslation: boolean,
   sendMessage: (data: any) => void
 ) => {
+  if (MOCK_CONFIG.ENABLE_MOCK_API) {
+    return await callMockAPI(text, "huggingface", isTranslation, sendMessage);
+  }
+
   const apiEndpoint = `${getApiEndpoint("huggingface")}/${getModel("huggingface", config)}`;
 
   const prompt = isTranslation
@@ -294,6 +317,10 @@ const callReplicateAPI = async (
   isTranslation: boolean,
   sendMessage: (data: any) => void
 ) => {
+  if (MOCK_CONFIG.ENABLE_MOCK_API) {
+    return await callMockAPI(text, "replicate", isTranslation, sendMessage);
+  }
+
   const apiEndpoint = getApiEndpoint("replicate");
   const model = getModel("replicate", config);
 
@@ -331,6 +358,10 @@ const callTogetherAPI = async (
   isTranslation: boolean,
   sendMessage: (data: any) => void
 ) => {
+  if (MOCK_CONFIG.ENABLE_MOCK_API) {
+    return await callMockAPI(text, "together", isTranslation, sendMessage);
+  }
+
   const apiEndpoint = getApiEndpoint("together");
   const model = getModel("together", config);
 
@@ -367,6 +398,10 @@ const callLocalAPI = async (
   isTranslation: boolean,
   sendMessage: (data: any) => void
 ) => {
+  if (MOCK_CONFIG.ENABLE_MOCK_API) {
+    return await callMockAPI(text, "local", isTranslation, sendMessage);
+  }
+
   const apiEndpoint = getApiEndpoint("local");
   const model = getModel("local", config);
 
@@ -374,9 +409,6 @@ const callLocalAPI = async (
     ? `Translate the following text to English: "${text}"`
     : `Summarize the following text in a few concise sentences: "${text}"`;
 
-  console.log("callLocalAPI", apiEndpoint, model, prompt);
-  await new Promise((resolve) => setTimeout(resolve, 5000));
-  console.log("fetching...");
   const response = await fetch(apiEndpoint, {
     method: "POST",
     headers: {
@@ -389,7 +421,6 @@ const callLocalAPI = async (
     })
   });
 
-  console.log({ response });
   if (!response.ok) {
     throw new Error(`${isTranslation ? "Translation" : "Summarization"} failed`);
   }

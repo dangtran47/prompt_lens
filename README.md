@@ -12,13 +12,21 @@ A Chromium-based browser extension that shows an AI assistant icon when text is 
 npm install
 ```
 
-2. Build the extension:
+2. Configure environment variables (optional):
+
+   - Copy `env.example` to `.env`
+   - Modify the values as needed:
+     - `VITE_ENABLE_MOCK_API`: Set to "true" to use mock API responses
+     - `VITE_ENABLE_MOCK_MODELS`: Set to "true" to use mock model responses
+     - `VITE_MOCK_DELAY_MIN/MAX`: Configure mock response delays
+
+3. Build the extension:
 
 ```bash
 npm run build
 ```
 
-3. Load the extension in your browser:
+4. Load the extension in your browser:
    - Open Chrome/Edge/Brave and go to `chrome://extensions/`
    - Enable "Developer mode" in the top right
    - Click "Load unpacked" and select the `dist` directory
