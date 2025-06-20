@@ -6,113 +6,42 @@ interface Config {
   apiKey: string;
 }
 
-// Function to get API endpoint based on provider
-const getApiEndpoint = (provider: string): string => {
-  switch (provider) {
-    case "openai":
-      return "https://api.openai.com/v1/chat/completions";
-    case "openrouter":
-      return "https://openrouter.ai/api/v1/chat/completions";
-    case "anthropic":
-      return "https://api.anthropic.com/v1/messages";
-    case "cohere":
-      return "https://api.cohere.ai/v1/generate";
-    case "huggingface":
-      return "https://api-inference.huggingface.co/models";
-    case "replicate":
-      return "https://api.replicate.com/v1/predictions";
-    case "together":
-      return "https://api.together.xyz/inference";
-    default:
-      return "http://localhost:11434/api/generate"; // Default for custom/local
+// Create and show streaming result popup
+const showStreamingResult = () => {
+  const popup = document.createElement("div");
+  popup.className = "prompt-lens-result-popup";
+  popup.innerHTML = `
+    <div class="prompt-lens-result-content">
+      <div class="prompt-lens-streaming-content">
+        <div class="prompt-lens-streaming-text"></div>
+        <div class="prompt-lens-streaming-indicator">
+          <span class="prompt-lens-dot"></span>
+          <span class="prompt-lens-dot"></span>
+          <span class="prompt-lens-dot"></span>
+        </div>
+      </div>
+      <button class="prompt-lens-close-btn">×</button>
+    </div>
+  `;
+  document.body.appendChild(popup);
+
+  // Position the result popup to the right of the buttons
+  if (buttonsContainer) {
+    const buttonRect = buttonsContainer.getBoundingClientRect();
+    popup.style.position = "fixed";
+    popup.style.left = `${buttonRect.right + 10}px`;
+    popup.style.top = `${buttonRect.top}px`;
   }
+
+  const closeBtn = popup.querySelector(".prompt-lens-close-btn");
+  closeBtn?.addEventListener("click", () => {
+    popup.remove();
+  });
+
+  return popup;
 };
 
-// Function to get model based on provider
-const getModel = (provider: string): string => {
-  switch (provider) {
-    case "openai":
-      return "gpt-3.5-turbo";
-    case "openrouter":
-      return "meta-llama/llama-2-7b-chat";
-    case "anthropic":
-      return "claude-3-haiku-20240307";
-    case "cohere":
-      return "command";
-    case "huggingface":
-      return "microsoft/DialoGPT-medium";
-    case "replicate":
-      return "meta/llama-2-7b-chat";
-    case "together":
-      return "togethercomputer/llama-2-7b-chat";
-    default:
-      return "llama3.1"; // Default for custom/local
-  }
-};
-
-// Function to translate text using the configured API
-const translateText = async (text: string, config: Config) => {
-  try {
-    const apiEndpoint = getApiEndpoint(config.provider);
-    const model = getModel(config.provider);
-
-    const response = await fetch(apiEndpoint, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...(config.apiKey && { Authorization: `Bearer ${config.apiKey}` })
-      },
-      body: JSON.stringify({
-        model: model,
-        prompt: `Translate the following text to English: "${text}"`,
-        stream: false
-      })
-    });
-
-    if (!response.ok) {
-      throw new Error("Translation failed");
-    }
-
-    const result = await response.json();
-    showResult(result.response || result.content || result);
-  } catch (error) {
-    console.error("Translation error:", error);
-    showError("Translation failed");
-  }
-};
-
-// Function to summarize text using the configured API
-const summarizeText = async (text: string, config: Config) => {
-  try {
-    const apiEndpoint = getApiEndpoint(config.provider);
-    const model = getModel(config.provider);
-
-    const response = await fetch(apiEndpoint, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...(config.apiKey && { Authorization: `Bearer ${config.apiKey}` })
-      },
-      body: JSON.stringify({
-        model: model,
-        prompt: `Summarize the following text in a few concise sentences: "${text}"`,
-        stream: false
-      })
-    });
-
-    if (!response.ok) {
-      throw new Error("Summarization failed");
-    }
-
-    const result = await response.json();
-    showResult(result.response || result.content || result);
-  } catch (error) {
-    console.error("Summarization error:", error);
-    showError("Summarization failed");
-  }
-};
-
-// Create and show result popup
+// Create and show result popup (for non-streaming fallback)
 const showResult = (text: string) => {
   const popup = document.createElement("div");
   popup.className = "prompt-lens-result-popup";
@@ -123,6 +52,14 @@ const showResult = (text: string) => {
     </div>
   `;
   document.body.appendChild(popup);
+
+  // Position the result popup to the right of the buttons
+  if (buttonsContainer) {
+    const buttonRect = buttonsContainer.getBoundingClientRect();
+    popup.style.position = "fixed";
+    popup.style.left = `${buttonRect.right + 10}px`;
+    popup.style.top = `${buttonRect.top}px`;
+  }
 
   const closeBtn = popup.querySelector(".prompt-lens-close-btn");
   closeBtn?.addEventListener("click", () => {
@@ -146,6 +83,74 @@ const showError = (message: string) => {
   closeBtn?.addEventListener("click", () => {
     popup.remove();
   });
+
+  // Auto-hide after 5 seconds
+  setTimeout(() => {
+    if (popup.parentNode) {
+      popup.remove();
+    }
+  }, 5000);
+};
+
+// Extract text content from streaming response based on provider
+const extractTextFromChunk = (chunk: any, provider: string): string => {
+  switch (provider) {
+    case "openai":
+    case "openrouter":
+      return chunk.choices?.[0]?.delta?.content || chunk.choices?.[0]?.message?.content || "";
+    case "anthropic":
+      return chunk.content?.[0]?.text || chunk.delta?.text || "";
+    case "cohere":
+      return chunk.text || chunk.generations?.[0]?.text || "";
+    case "huggingface":
+      return chunk.generated_text || chunk[0]?.generated_text || "";
+    case "replicate":
+      return chunk.output || "";
+    case "together":
+      return chunk.output?.choices?.[0]?.text || "";
+    default: // local/ollama
+      return chunk.response || chunk.content || "";
+  }
+};
+
+// Handle streaming response
+const handleStreamingResponse = (provider: string) => {
+  const popup = showStreamingResult();
+  const textElement = popup.querySelector(".prompt-lens-streaming-text") as HTMLElement;
+  const indicator = popup.querySelector(".prompt-lens-streaming-indicator") as HTMLElement;
+  let fullText = "";
+
+  // Listen for stream messages from background script
+  const messageListener = (message: any) => {
+    if (message.type === "stream") {
+      const streamData = message.data;
+
+      if (streamData.type === "chunk") {
+        const chunkText = extractTextFromChunk(streamData.data, provider);
+        if (chunkText) {
+          fullText += chunkText;
+          textElement.textContent = fullText;
+        }
+      } else if (streamData.type === "done") {
+        // Stop loading - hide the streaming indicator
+        if (indicator) {
+          indicator.style.display = "none";
+        }
+        // Remove the message listener
+        chrome.runtime.onMessage.removeListener(messageListener);
+      } else if (streamData.type === "error") {
+        showError(streamData.error || "Operation failed");
+        popup.remove();
+        // Remove the message listener
+        chrome.runtime.onMessage.removeListener(messageListener);
+      }
+    }
+  };
+
+  // Add the message listener
+  chrome.runtime.onMessage.addListener(messageListener);
+
+  return popup;
 };
 
 // Create floating buttons
@@ -188,7 +193,25 @@ const createFloatingButtons = () => {
         if (result.extensionConfig) {
           const config = JSON.parse(result.extensionConfig);
           if (config.mode === "local" && config.provider) {
-            translateText(selectedText, config);
+            // Send message to background script
+            chrome.runtime.sendMessage(
+              {
+                action: "translate",
+                text: selectedText,
+                config: config
+              },
+              (response) => {
+                if (response.success && response.streaming) {
+                  // Handle streaming response
+                  handleStreamingResponse(config.provider);
+                } else if (response.success) {
+                  // Fallback to non-streaming
+                  showResult(response.data);
+                } else {
+                  showError(response.error || "Translation failed");
+                }
+              }
+            );
           } else {
             showError("Please configure the extension first");
           }
@@ -206,7 +229,25 @@ const createFloatingButtons = () => {
         if (result.extensionConfig) {
           const config = JSON.parse(result.extensionConfig);
           if (config.mode === "local" && config.provider) {
-            summarizeText(selectedText, config);
+            // Send message to background script
+            chrome.runtime.sendMessage(
+              {
+                action: "summarize",
+                text: selectedText,
+                config: config
+              },
+              (response) => {
+                if (response.success && response.streaming) {
+                  // Handle streaming response
+                  handleStreamingResponse(config.provider);
+                } else if (response.success) {
+                  // Fallback to non-streaming
+                  showResult(response.data);
+                } else {
+                  showError(response.error || "Summarization failed");
+                }
+              }
+            );
           } else {
             showError("Please configure the extension first");
           }
@@ -234,6 +275,12 @@ const positionButtons = (selection: Selection) => {
   buttonsContainer.style.display = "block";
 };
 
+// Remove all result popups
+const removeAllResultPopups = () => {
+  const resultPopups = document.querySelectorAll(".prompt-lens-result-popup");
+  resultPopups.forEach((popup) => popup.remove());
+};
+
 document.addEventListener("mouseup", () => {
   const selection = window.getSelection();
 
@@ -245,6 +292,7 @@ document.addEventListener("mouseup", () => {
   } else if (buttonsContainer) {
     buttonsContainer.remove();
     buttonsContainer = null;
+    removeAllResultPopups();
   }
 });
 
@@ -252,6 +300,7 @@ document.addEventListener("mousedown", (e) => {
   if (buttonsContainer && !buttonsContainer.contains(e.target as Node)) {
     buttonsContainer.remove();
     buttonsContainer = null;
+    removeAllResultPopups();
   }
 });
 
@@ -259,6 +308,7 @@ document.addEventListener("mousedown", (e) => {
 //   if (buttonsContainer) {
 //     buttonsContainer.remove();
 //     buttonsContainer = null;
+//     removeAllResultPopups();
 //   }
 // });
 
@@ -266,5 +316,6 @@ window.addEventListener("resize", () => {
   if (buttonsContainer) {
     buttonsContainer.remove();
     buttonsContainer = null;
+    removeAllResultPopups();
   }
 });

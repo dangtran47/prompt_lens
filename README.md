@@ -2,6 +2,8 @@
 
 A Chromium-based browser extension that shows an AI assistant icon when text is selected on any webpage, enabling translation and custom LLM interactions.
 
+![Demo](assets/demo/gif)
+
 ## Setup
 
 1. Install dependencies:
