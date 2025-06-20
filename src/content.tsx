@@ -1,11 +1,5 @@
 import "./styles/content.css";
 
-interface Config {
-  mode: "online" | "local" | null;
-  provider: string;
-  apiKey: string;
-}
-
 // Create and show streaming result popup
 const showStreamingResult = () => {
   const popup = document.createElement("div");
@@ -192,25 +186,34 @@ const createFloatingButtons = () => {
       chrome.storage.sync.get(["extensionConfig"], (result) => {
         if (result.extensionConfig) {
           const config = JSON.parse(result.extensionConfig);
-          if (config.mode === "local" && config.provider) {
+          if (
+            config.mode === "local" &&
+            config.defaultProvider &&
+            config.providers[config.defaultProvider]
+          ) {
+            const providerConfig = config.providers[config.defaultProvider];
             // Send message to background script
             chrome.runtime.sendMessage(
               {
                 action: "translate",
                 text: selectedText,
-                config: config
+                config: {
+                  provider: providerConfig.name,
+                  apiKey: providerConfig.apiKey,
+                  model: providerConfig.model,
+                },
               },
               (response) => {
                 if (response.success && response.streaming) {
                   // Handle streaming response
-                  handleStreamingResponse(config.provider);
+                  handleStreamingResponse(providerConfig.name);
                 } else if (response.success) {
                   // Fallback to non-streaming
                   showResult(response.data);
                 } else {
                   showError(response.error || "Translation failed");
                 }
-              }
+              },
             );
           } else {
             showError("Please configure the extension first");
@@ -228,25 +231,34 @@ const createFloatingButtons = () => {
       chrome.storage.sync.get(["extensionConfig"], (result) => {
         if (result.extensionConfig) {
           const config = JSON.parse(result.extensionConfig);
-          if (config.mode === "local" && config.provider) {
+          if (
+            config.mode === "local" &&
+            config.defaultProvider &&
+            config.providers[config.defaultProvider]
+          ) {
+            const providerConfig = config.providers[config.defaultProvider];
             // Send message to background script
             chrome.runtime.sendMessage(
               {
                 action: "summarize",
                 text: selectedText,
-                config: config
+                config: {
+                  provider: providerConfig.name,
+                  apiKey: providerConfig.apiKey,
+                  model: providerConfig.model,
+                },
               },
               (response) => {
                 if (response.success && response.streaming) {
                   // Handle streaming response
-                  handleStreamingResponse(config.provider);
+                  handleStreamingResponse(providerConfig.name);
                 } else if (response.success) {
                   // Fallback to non-streaming
                   showResult(response.data);
                 } else {
                   showError(response.error || "Summarization failed");
                 }
-              }
+              },
             );
           } else {
             showError("Please configure the extension first");
