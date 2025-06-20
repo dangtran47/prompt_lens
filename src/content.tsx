@@ -1,11 +1,5 @@
 import "./styles/content.css";
 
-interface Config {
-  mode: "online" | "local" | null;
-  provider: string;
-  apiKey: string;
-}
-
 // Create and show streaming result popup
 const showStreamingResult = () => {
   const popup = document.createElement("div");
@@ -206,8 +200,8 @@ const createFloatingButtons = () => {
                 config: {
                   provider: providerConfig.name,
                   apiKey: providerConfig.apiKey,
-                  model: providerConfig.model
-                }
+                  model: providerConfig.model,
+                },
               },
               (response) => {
                 if (response.success && response.streaming) {
@@ -219,7 +213,7 @@ const createFloatingButtons = () => {
                 } else {
                   showError(response.error || "Translation failed");
                 }
-              }
+              },
             );
           } else {
             showError("Please configure the extension first");
@@ -251,8 +245,8 @@ const createFloatingButtons = () => {
                 config: {
                   provider: providerConfig.name,
                   apiKey: providerConfig.apiKey,
-                  model: providerConfig.model
-                }
+                  model: providerConfig.model,
+                },
               },
               (response) => {
                 if (response.success && response.streaming) {
@@ -264,7 +258,7 @@ const createFloatingButtons = () => {
                 } else {
                   showError(response.error || "Summarization failed");
                 }
-              }
+              },
             );
           } else {
             showError("Please configure the extension first");

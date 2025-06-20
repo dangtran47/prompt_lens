@@ -1,5 +1,3 @@
-import { ProviderType } from "../types/config";
-
 export const getProviderDisplayName = (providerType: string): string => {
   const names: { [key: string]: string } = {
     openai: "OpenAI",
@@ -9,7 +7,7 @@ export const getProviderDisplayName = (providerType: string): string => {
     huggingface: "Hugging Face",
     replicate: "Replicate",
     together: "Together AI",
-    custom: "Custom Provider"
+    custom: "Custom Provider",
   };
   return names[providerType] || providerType;
 };
@@ -22,5 +20,5 @@ export const getProviderOptions = (): { value: string; label: string }[] => [
   { value: "huggingface", label: "Hugging Face" },
   { value: "replicate", label: "Replicate" },
   { value: "together", label: "Together AI" },
-  { value: "custom", label: "Custom Provider" }
+  { value: "custom", label: "Custom Provider" },
 ];
