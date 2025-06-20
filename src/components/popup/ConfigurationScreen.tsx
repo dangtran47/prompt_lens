@@ -12,7 +12,6 @@ interface ConfigurationScreenProps {
   onRemoveProvider: (providerKey: string) => void;
   onSetDefaultProvider: (providerKey: string) => void;
   onUpdateProvider: (providerKey: string, field: string, value: string) => void;
-  onStartModelSelection: (providerKey: string) => void;
   onSetEditingProvider: (providerKey: string | null) => void;
   onCancel: () => void;
   onSave: () => void;
@@ -25,7 +24,6 @@ export const ConfigurationScreen: React.FC<ConfigurationScreenProps> = ({
   onRemoveProvider,
   onSetDefaultProvider,
   onUpdateProvider,
-  onStartModelSelection,
   onSetEditingProvider,
   onCancel,
   onSave
@@ -72,7 +70,6 @@ export const ConfigurationScreen: React.FC<ConfigurationScreenProps> = ({
             providerKey={editingProvider}
             provider={config.providers[editingProvider]}
             onUpdateProvider={onUpdateProvider}
-            onStartModelSelection={onStartModelSelection}
             onCancel={() => onSetEditingProvider(null)}
             onDone={() => onSetEditingProvider(null)}
           />

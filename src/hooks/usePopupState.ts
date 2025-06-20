@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
-import { Config, Model } from "../types/config";
+import { Config } from "../types/config";
 import { ConfigService } from "../services/configService";
-import { ModelsService } from "../services/modelsService";
 
 export const usePopupState = () => {
   const [currentMode, setCurrentMode] = useState<"online" | "local" | null>(null);
@@ -11,11 +10,6 @@ export const usePopupState = () => {
     providers: {}
   });
   const [isConfiguring, setIsConfiguring] = useState(false);
-  const [isSelectingModel, setIsSelectingModel] = useState(false);
-  const [currentProviderKey, setCurrentProviderKey] = useState("");
-  const [models, setModels] = useState<Model[]>([]);
-  const [isLoadingModels, setIsLoadingModels] = useState(false);
-  const [modelError, setModelError] = useState("");
   const [editingProvider, setEditingProvider] = useState<string | null>(null);
 
   // Load saved configuration on component mount
@@ -31,22 +25,6 @@ export const usePopupState = () => {
   // Save configuration to Chrome storage
   const saveConfig = async (newConfig: Config) => {
     await ConfigService.saveConfig(newConfig);
-  };
-
-  // Fetch available models from the API
-  const fetchModels = async (provider: string, apiKey: string) => {
-    setIsLoadingModels(true);
-    setModelError("");
-
-    try {
-      const models = await ModelsService.fetchModels(provider, apiKey);
-      setModels(models);
-    } catch (error) {
-      console.error("Error fetching models:", error);
-      setModelError("Failed to fetch models. Please check your API key.");
-    } finally {
-      setIsLoadingModels(false);
-    }
   };
 
   const handleModeSelect = (mode: "online" | "local") => {
@@ -115,31 +93,11 @@ export const usePopupState = () => {
     saveConfig(newConfig);
   };
 
-  const startModelSelection = async (providerKey: string) => {
-    const provider = config.providers[providerKey];
-    if (provider.apiKey) {
-      setCurrentProviderKey(providerKey);
-      await fetchModels(provider.name, provider.apiKey);
-      setIsSelectingModel(true);
-    }
-  };
-
-  const handleModelSelect = () => {
-    if (currentProviderKey && config.providers[currentProviderKey]?.model) {
-      // Model is already updated via the Select onChange
-      setIsSelectingModel(false);
-      setCurrentProviderKey("");
-    }
-  };
-
   const resetConfig = () => {
     const resetConfig = ConfigService.getDefaultConfig();
     setConfig(resetConfig);
     setCurrentMode(null);
     setIsConfiguring(false);
-    setIsSelectingModel(false);
-    setModels([]);
-    setModelError("");
     setEditingProvider(null);
     saveConfig(resetConfig);
   };
@@ -149,11 +107,6 @@ export const usePopupState = () => {
     currentMode,
     config,
     isConfiguring,
-    isSelectingModel,
-    currentProviderKey,
-    models,
-    isLoadingModels,
-    modelError,
     editingProvider,
 
     // Actions
@@ -162,13 +115,9 @@ export const usePopupState = () => {
     removeProvider,
     setDefaultProvider,
     updateProvider,
-    startModelSelection,
-    handleModelSelect,
     resetConfig,
     setIsConfiguring,
     setEditingProvider,
-    setCurrentProviderKey,
-    setIsSelectingModel,
     setCurrentMode
   };
 };

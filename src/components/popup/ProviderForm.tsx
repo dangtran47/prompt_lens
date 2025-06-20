@@ -1,8 +1,10 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Select } from "../ui/select";
 import { getProviderDisplayName, getProviderOptions } from "../../utils/providerUtils";
+import { ModelsService } from "../../services/modelsService";
+import { Model } from "../../types/config";
 
 interface ProviderFormProps {
   providerKey: string;
@@ -12,7 +14,6 @@ interface ProviderFormProps {
     model: string;
   };
   onUpdateProvider: (providerKey: string, field: string, value: string) => void;
-  onStartModelSelection: (providerKey: string) => void;
   onCancel: () => void;
   onDone: () => void;
 }
@@ -21,12 +22,40 @@ export const ProviderForm: React.FC<ProviderFormProps> = ({
   providerKey,
   provider,
   onUpdateProvider,
-  onStartModelSelection,
   onCancel,
   onDone
 }) => {
+  const [models, setModels] = useState<Model[]>([]);
+  const [isLoadingModels, setIsLoadingModels] = useState(false);
+  const [modelError, setModelError] = useState("");
+
   const hasProviderAndKey = provider.name && provider.apiKey;
-  const hasModel = provider.model;
+
+  // Fetch models when provider or API key changes
+  useEffect(() => {
+    const fetchModels = async () => {
+      if (provider.name && provider.apiKey) {
+        setIsLoadingModels(true);
+        setModelError("");
+
+        try {
+          const availableModels = await ModelsService.fetchModels(provider.name, provider.apiKey);
+          setModels(availableModels);
+        } catch (error) {
+          console.error("Error fetching models:", error);
+          setModelError("Failed to fetch models. Please check your API key.");
+          setModels([]);
+        } finally {
+          setIsLoadingModels(false);
+        }
+      } else {
+        setModels([]);
+        setModelError("");
+      }
+    };
+
+    fetchModels();
+  }, [provider.name, provider.apiKey]);
 
   return (
     <div className="border rounded-lg p-4 bg-blue-50">
@@ -60,31 +89,27 @@ export const ProviderForm: React.FC<ProviderFormProps> = ({
           />
         </div>
 
-        {hasModel && (
+        {hasProviderAndKey && (
           <div>
-            <label className="block text-xs font-medium text-blue-700 mb-1">
-              Current Model: {provider.model}
-            </label>
-            <Button
-              variant="outline"
-              size="sm"
-              className="w-full text-blue-600 border-blue-300 hover:bg-blue-100"
-              onClick={() => onStartModelSelection(providerKey)}
-            >
-              Change Model
-            </Button>
+            <label className="block text-xs font-medium text-blue-700 mb-1">Model</label>
+            {isLoadingModels ? (
+              <div className="text-xs text-blue-600">Loading models...</div>
+            ) : modelError ? (
+              <div className="text-xs text-red-600 bg-red-50 p-2 rounded">{modelError}</div>
+            ) : (
+              <Select
+                value={provider.model || ""}
+                onChange={(e) => onUpdateProvider(providerKey, "model", e.target.value)}
+              >
+                <option value="">Choose a model...</option>
+                {models.map((model) => (
+                  <option key={model.id} value={model.id}>
+                    {model.display_name || model.name || model.id}
+                  </option>
+                ))}
+              </Select>
+            )}
           </div>
-        )}
-
-        {hasProviderAndKey && !hasModel && (
-          <Button
-            variant="outline"
-            size="sm"
-            className="w-full text-blue-600 border-blue-300 hover:bg-blue-100"
-            onClick={() => onStartModelSelection(providerKey)}
-          >
-            Select Model
-          </Button>
         )}
       </div>
 
