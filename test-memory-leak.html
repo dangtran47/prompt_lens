@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Memory Leak Test - Prompt Lens</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+        line-height: 1.6;
+      }
+      .test-section {
+        margin: 20px 0;
+        padding: 15px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+      }
+      .test-button {
+        background: #007bff;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 5px;
+        cursor: pointer;
+        margin: 5px;
+      }
+      .test-button:hover {
+        background: #0056b3;
+      }
+      .status {
+        margin-top: 10px;
+        padding: 10px;
+        border-radius: 5px;
+      }
+      .status.success {
+        background: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+      }
+      .status.error {
+        background: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+      }
+      .status.info {
+        background: #d1ecf1;
+        color: #0c5460;
+        border: 1px solid #bee5eb;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Prompt Lens Memory Leak Test</h1>
+
+    <div class="test-section">
+      <h2>Test Instructions</h2>
+      <p>This page helps test for memory leaks in the Prompt Lens extension:</p>
+      <ol>
+        <li>Select text on this page to trigger the extension buttons</li>
+        <li>Click translate/summarize multiple times</li>
+        <li>Close popups manually and automatically</li>
+        <li>Navigate away and back to see if memory is properly cleaned up</li>
+        <li>Check browser dev tools for memory usage</li>
+      </ol>
+    </div>
+
+    <div class="test-section">
+      <h2>Test Controls</h2>
+      <button class="test-button" onclick="testMemoryUsage()">Check Memory Usage</button>
+      <button class="test-button" onclick="clearAllPopups()">Clear All Popups</button>
+      <button class="test-button" onclick="testEventListeners()">Test Event Listeners</button>
+      <div id="status"></div>
+    </div>
+
+    <div class="test-section">
+      <h2>Sample Text for Testing</h2>
+      <p>
+        This is a sample paragraph that you can select to test the Prompt Lens extension. The
+        extension should show translate and summarize buttons when you select this text. Try
+        selecting different portions of this text multiple times to test for memory leaks.
+      </p>
+
+      <p>
+        Here's another paragraph with more content to test with. This paragraph contains enough text
+        to make a meaningful selection for translation or summarization testing. The extension
+        should handle multiple selections and popup creations without causing memory leaks or
+        performance issues.
+      </p>
+
+      <p>
+        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut
+        labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco
+        laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in
+        voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat
+        cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+      </p>
+    </div>
+
+    <div class="test-section">
+      <h2>Memory Usage Monitor</h2>
+      <div id="memory-info">
+        <p>Click "Check Memory Usage" to see current memory statistics.</p>
+      </div>
+    </div>
+
+    <script>
+      function showStatus(message, type = "info") {
+        const statusDiv = document.getElementById("status");
+        statusDiv.innerHTML = `<div class="status ${type}">${message}</div>`;
+      }
+
+      function testMemoryUsage() {
+        if ("memory" in performance) {
+          const memory = performance.memory;
+          const info = `
+                    <strong>Memory Usage:</strong><br>
+                    Used JS Heap Size: ${(memory.usedJSHeapSize / 1024 / 1024).toFixed(2)} MB<br>
+                    Total JS Heap Size: ${(memory.totalJSHeapSize / 1024 / 1024).toFixed(2)} MB<br>
+                    JS Heap Size Limit: ${(memory.jsHeapSizeLimit / 1024 / 1024).toFixed(2)} MB<br>
+                    Memory Usage: ${(
+                      (memory.usedJSHeapSize / memory.jsHeapSizeLimit) *
+                      100
+                    ).toFixed(2)}%
+                `;
+          document.getElementById("memory-info").innerHTML = info;
+          showStatus("Memory usage checked successfully", "success");
+        } else {
+          showStatus("Memory API not available in this browser", "error");
+        }
+      }
+
+      function clearAllPopups() {
+        const popups = document.querySelectorAll(
+          ".prompt-lens-result-popup, .prompt-lens-error-popup"
+        );
+        popups.forEach((popup) => popup.remove());
+        showStatus(`Cleared ${popups.length} popups`, "success");
+      }
+
+      function testEventListeners() {
+        // Count event listeners (approximate)
+        const buttons = document.querySelectorAll(".prompt-lens-btn");
+        const popups = document.querySelectorAll(
+          ".prompt-lens-result-popup, .prompt-lens-error-popup"
+        );
+
+        const info = `
+                <strong>Current Elements:</strong><br>
+                Extension Buttons: ${buttons.length}<br>
+                Active Popups: ${popups.length}<br>
+                <em>Note: This is an approximation. Use browser dev tools for detailed analysis.</em>
+            `;
+        document.getElementById("memory-info").innerHTML = info;
+        showStatus("Event listener test completed", "info");
+      }
+
+      // Monitor for extension elements
+      const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+          if (mutation.type === "childList") {
+            const addedNodes = Array.from(mutation.addedNodes);
+            const removedNodes = Array.from(mutation.removedNodes);
+
+            const extensionElements = [...addedNodes, ...removedNodes].filter(
+              (node) =>
+                node.nodeType === Node.ELEMENT_NODE &&
+                (node.className?.includes("prompt-lens") || node.querySelector?.(".prompt-lens"))
+            );
+
+            if (extensionElements.length > 0) {
+              console.log("Extension elements changed:", extensionElements.length);
+            }
+          }
+        });
+      });
+
+      observer.observe(document.body, {
+        childList: true,
+        subtree: true
+      });
+
+      // Clean up on page unload
+      window.addEventListener("beforeunload", () => {
+        observer.disconnect();
+      });
+    </script>
+  </body>
+</html>
