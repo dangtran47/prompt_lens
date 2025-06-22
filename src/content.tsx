@@ -1,5 +1,26 @@
 import "./styles/content.css";
 
+// Track active message listeners for cleanup
+let activeMessageListeners: Array<() => void> = [];
+
+// Throttle function for performance
+const throttle = (func: Function, limit: number) => {
+  let inThrottle: boolean;
+  return function (this: any, ...args: any[]) {
+    if (!inThrottle) {
+      func.apply(this, args);
+      inThrottle = true;
+      setTimeout(() => (inThrottle = false), limit);
+    }
+  };
+};
+
+// Clean up all message listeners
+const cleanupMessageListeners = () => {
+  activeMessageListeners.forEach((removeListener) => removeListener());
+  activeMessageListeners = [];
+};
+
 // Create and show streaming result popup
 const showStreamingResult = () => {
   const popup = document.createElement("div");
@@ -28,9 +49,13 @@ const showStreamingResult = () => {
   }
 
   const closeBtn = popup.querySelector(".prompt-lens-close-btn");
-  closeBtn?.addEventListener("click", () => {
+  const closePopup = () => {
     popup.remove();
-  });
+    // Clean up any active message listeners when popup is closed
+    cleanupMessageListeners();
+  };
+
+  closeBtn?.addEventListener("click", closePopup);
 
   return popup;
 };
@@ -74,16 +99,23 @@ const showError = (message: string) => {
   document.body.appendChild(popup);
 
   const closeBtn = popup.querySelector(".prompt-lens-close-btn");
-  closeBtn?.addEventListener("click", () => {
+  const closePopup = () => {
     popup.remove();
-  });
+  };
+
+  closeBtn?.addEventListener("click", closePopup);
 
   // Auto-hide after 5 seconds
-  setTimeout(() => {
+  const timeoutId = setTimeout(() => {
     if (popup.parentNode) {
       popup.remove();
     }
   }, 5000);
+
+  // Clean up timeout if popup is manually closed
+  closeBtn?.addEventListener("click", () => {
+    clearTimeout(timeoutId);
+  });
 };
 
 // Extract text content from streaming response based on provider
@@ -131,18 +163,24 @@ const handleStreamingResponse = (provider: string) => {
           indicator.style.display = "none";
         }
         // Remove the message listener
-        chrome.runtime.onMessage.removeListener(messageListener);
+        cleanupMessageListeners();
       } else if (streamData.type === "error") {
         showError(streamData.error || "Operation failed");
         popup.remove();
         // Remove the message listener
-        chrome.runtime.onMessage.removeListener(messageListener);
+        cleanupMessageListeners();
       }
     }
   };
 
-  // Add the message listener
+  // Create a function to remove this specific listener
+  const removeListener = () => {
+    chrome.runtime.onMessage.removeListener(messageListener);
+  };
+
+  // Add the message listener and track it for cleanup
   chrome.runtime.onMessage.addListener(messageListener);
+  activeMessageListeners.push(removeListener);
 
   return popup;
 };
@@ -200,8 +238,8 @@ const createFloatingButtons = () => {
                 config: {
                   provider: providerConfig.name,
                   apiKey: providerConfig.apiKey,
-                  model: providerConfig.model,
-                },
+                  model: providerConfig.model
+                }
               },
               (response) => {
                 if (response.success && response.streaming) {
@@ -213,7 +251,7 @@ const createFloatingButtons = () => {
                 } else {
                   showError(response.error || "Translation failed");
                 }
-              },
+              }
             );
           } else {
             showError("Please configure the extension first");
@@ -245,8 +283,8 @@ const createFloatingButtons = () => {
                 config: {
                   provider: providerConfig.name,
                   apiKey: providerConfig.apiKey,
-                  model: providerConfig.model,
-                },
+                  model: providerConfig.model
+                }
               },
               (response) => {
                 if (response.success && response.streaming) {
@@ -258,7 +296,7 @@ const createFloatingButtons = () => {
                 } else {
                   showError(response.error || "Summarization failed");
                 }
-              },
+              }
             );
           } else {
             showError("Please configure the extension first");
@@ -287,13 +325,20 @@ const positionButtons = (selection: Selection) => {
   buttonsContainer.style.display = "block";
 };
 
-// Remove all result popups
-const removeAllResultPopups = () => {
+// Remove all result popups and error popups
+const removeAllPopups = () => {
   const resultPopups = document.querySelectorAll(".prompt-lens-result-popup");
+  const errorPopups = document.querySelectorAll(".prompt-lens-error-popup");
+
   resultPopups.forEach((popup) => popup.remove());
+  errorPopups.forEach((popup) => popup.remove());
+
+  // Clean up message listeners
+  cleanupMessageListeners();
 };
 
-document.addEventListener("mouseup", () => {
+// Throttled mouseup handler for better performance
+const throttledMouseUp = throttle(() => {
   const selection = window.getSelection();
 
   if (selection && selection.toString().trim()) {
@@ -304,30 +349,49 @@ document.addEventListener("mouseup", () => {
   } else if (buttonsContainer) {
     buttonsContainer.remove();
     buttonsContainer = null;
-    removeAllResultPopups();
+    removeAllPopups();
   }
-});
+}, 100); // Throttle to 100ms
+
+document.addEventListener("mouseup", throttledMouseUp);
 
 document.addEventListener("mousedown", (e) => {
   if (buttonsContainer && !buttonsContainer.contains(e.target as Node)) {
     buttonsContainer.remove();
     buttonsContainer = null;
-    removeAllResultPopups();
+    removeAllPopups();
   }
 });
 
-// document.addEventListener("scroll", () => {
-//   if (buttonsContainer) {
-//     buttonsContainer.remove();
-//     buttonsContainer = null;
-//     removeAllResultPopups();
-//   }
-// });
+// Re-enable scroll handler for proper cleanup
+document.addEventListener(
+  "scroll",
+  throttle(() => {
+    if (buttonsContainer) {
+      buttonsContainer.remove();
+      buttonsContainer = null;
+      removeAllPopups();
+    }
+  }, 100)
+);
 
-window.addEventListener("resize", () => {
+window.addEventListener(
+  "resize",
+  throttle(() => {
+    if (buttonsContainer) {
+      buttonsContainer.remove();
+      buttonsContainer = null;
+      removeAllPopups();
+    }
+  }, 100)
+);
+
+// Clean up on page unload
+window.addEventListener("beforeunload", () => {
+  cleanupMessageListeners();
+  removeAllPopups();
   if (buttonsContainer) {
     buttonsContainer.remove();
     buttonsContainer = null;
-    removeAllResultPopups();
   }
 });

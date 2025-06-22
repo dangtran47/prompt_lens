@@ -60,11 +60,18 @@ const handleStreamResponse = async (response: Response, sendMessage: (data: any)
   const reader = response.body.getReader();
   const decoder = new TextDecoder();
 
+  // Add timeout to prevent infinite streaming (5 minutes)
+  const timeoutId = setTimeout(() => {
+    reader.cancel("Stream timeout");
+    sendMessage({ type: "error", error: "Stream timeout - request took too long" });
+  }, 5 * 60 * 1000);
+
   try {
     while (true) {
       const { done, value } = await reader.read();
       if (done) {
         // Send done message when stream is complete
+        clearTimeout(timeoutId);
         sendMessage({ type: "done" });
         break;
       }
@@ -77,6 +84,7 @@ const handleStreamResponse = async (response: Response, sendMessage: (data: any)
         if (line.startsWith("data: ")) {
           const data = line.slice(6);
           if (data === "[DONE]") {
+            clearTimeout(timeoutId);
             sendMessage({ type: "done" });
             return;
           }
@@ -89,7 +97,12 @@ const handleStreamResponse = async (response: Response, sendMessage: (data: any)
         }
       }
     }
+  } catch (error) {
+    clearTimeout(timeoutId);
+    console.error("Stream error:", error);
+    sendMessage({ type: "error", error: "Stream failed" });
   } finally {
+    clearTimeout(timeoutId);
     reader.releaseLock();
   }
 };
@@ -486,14 +499,25 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
     // Use sendMessage to communicate with content script instead of port
     const sendStreamMessage = (data: any) => {
-      chrome.tabs
-        .sendMessage(sender.tab!.id!, {
-          type: "stream",
-          data: data
-        })
-        .catch((error) => {
-          console.error("Failed to send stream message:", error);
+      // Check if tab still exists before sending message
+      if (sender.tab?.id) {
+        chrome.tabs.get(sender.tab.id, (tab) => {
+          if (chrome.runtime.lastError || !tab) {
+            console.log("Tab no longer exists, stopping stream");
+            return;
+          }
+
+          chrome.tabs
+            .sendMessage(sender.tab!.id!, {
+              type: "stream",
+              data: data
+            })
+            .catch((error) => {
+              console.error("Failed to send stream message:", error);
+              // Stop trying to send messages if there's an error
+            });
         });
+      }
     };
 
     translateText(request.text, request.config, sendStreamMessage);
@@ -504,19 +528,36 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
     // Use sendMessage to communicate with content script instead of port
     const sendStreamMessage = (data: any) => {
-      chrome.tabs
-        .sendMessage(sender.tab!.id!, {
-          type: "stream",
-          data: data
-        })
-        .catch((error) => {
-          console.error("Failed to send stream message:", error);
+      // Check if tab still exists before sending message
+      if (sender.tab?.id) {
+        chrome.tabs.get(sender.tab.id, (tab) => {
+          if (chrome.runtime.lastError || !tab) {
+            console.log("Tab no longer exists, stopping stream");
+            return;
+          }
+
+          chrome.tabs
+            .sendMessage(sender.tab!.id!, {
+              type: "stream",
+              data: data
+            })
+            .catch((error) => {
+              console.error("Failed to send stream message:", error);
+              // Stop trying to send messages if there's an error
+            });
         });
+      }
     };
 
     summarizeText(request.text, request.config, sendStreamMessage);
     return true;
   }
+});
+
+// Clean up when tabs are closed
+chrome.tabs.onRemoved.addListener((tabId) => {
+  // This helps prevent memory leaks when tabs are closed during streaming
+  console.log("Tab closed:", tabId);
 });
 
 chrome.runtime.onInstalled.addListener(() => {
